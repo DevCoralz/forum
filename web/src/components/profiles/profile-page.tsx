@@ -25,16 +25,15 @@ export function ProfilePage({ profile }: { profile: CommunityProfile }) {
     <div className="profile-shell">
       <SiteHeader />
       <main>
-        <div className="profile-cover" aria-hidden="true" />
-        <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="-mt-10 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 sm:-mt-12">
-            <div className="flex min-w-0 items-end gap-3 sm:gap-5">
+        <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border pb-6">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-5">
               <div className="profile-avatar">
                 {profile.avatarUrl
                   ? <img src={profile.avatarUrl} alt="" className="size-full rounded-full object-cover" />
                   : profile.initials}
               </div>
-              <div className="min-w-0 pb-1">
+              <div className="min-w-0">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <h1 className="truncate font-display text-xl font-semibold text-foreground sm:text-2xl">{profile.username}</h1>
                   {profile.verified && <BadgeCheck className="size-4 shrink-0 text-cyan" aria-label="Verified member" />}
@@ -66,7 +65,7 @@ export function ProfilePage({ profile }: { profile: CommunityProfile }) {
             </div>
 
             <aside className="border-t border-border pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-              <p className="text-[.68rem] font-semibold uppercase text-muted-foreground">Connect</p>
+              <p className="text-[.68rem] font-semibold uppercase text-muted-foreground">Links</p>
               <div className="mt-3 grid gap-2 text-xs">
                 {profile.socials.filter((social) => social.value).map((social) => (
                   <div key={social.platform} className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 text-secondary-foreground">
@@ -75,7 +74,7 @@ export function ProfilePage({ profile }: { profile: CommunityProfile }) {
                   </div>
                 ))}
               </div>
-              <p className="mt-5 flex items-start gap-2 text-[.68rem] leading-5 text-muted-foreground"><LockKeyhole className="mt-0.5 size-3 shrink-0" />Follower identities are private. Only counts are public.</p>
+              <p className="mt-5 flex items-start gap-2 text-[.68rem] leading-5 text-muted-foreground"><LockKeyhole className="mt-0.5 size-3 shrink-0" />Followers are private.</p>
             </aside>
           </div>
 

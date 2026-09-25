@@ -70,7 +70,7 @@ export function PostFeed({ posts, isLoading = false }: { posts: PostSummary[]; i
   const showPremiumWall = !hasPremium && (filter === "premium" || visible.some((p) => p.access === "premium"));
 
   return (
-    <section id="latest" className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
+    <section id="latest" className="mx-auto max-w-6xl px-4 pb-14 sm:px-6 lg:px-8">
       <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
         <h2 className="section-title">Latest Posts</h2>
         <div className="feed-tabs" aria-label="Filter posts">

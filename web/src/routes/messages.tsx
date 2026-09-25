@@ -6,10 +6,10 @@ import { MessagesPage } from "@/components/messages/messages-page";
 export const Route = createFileRoute("/messages")({
   head: () => ({
     meta: [
-      { title: "Messages & live chat — CORALZ" },
-      { name: "description", content: "Watch and join the CORALZ public chat stream, or find members to message." },
-      { property: "og:title", content: "Messages & live chat — CORALZ" },
-      { property: "og:description", content: "Watch and join the CORALZ public chat stream, or find members to message." },
+      { title: "Messages — I2P Forum" },
+      { name: "description", content: "I2P Forum messages and public chat." },
+      { property: "og:title", content: "Messages — I2P Forum" },
+      { property: "og:description", content: "I2P Forum messages and public chat." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

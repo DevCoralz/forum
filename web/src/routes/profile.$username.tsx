@@ -21,10 +21,10 @@ export const Route = createFileRoute("/profile/$username")({
   pendingComponent: LoadingSpinner,
   head: ({ params }) => ({
     meta: [
-      { title: `${params.username} — CORALZ Profile` },
-      { name: "description", content: `View ${params.username}'s community profile and public posts on CORALZ.` },
-      { property: "og:title", content: `${params.username} — CORALZ Profile` },
-      { property: "og:description", content: `View ${params.username}'s public CORALZ profile and posts.` },
+      { title: `${params.username} — I2P Forum` },
+      { name: "description", content: `View ${params.username}'s I2P Forum profile and posts.` },
+      { property: "og:title", content: `${params.username} — I2P Forum` },
+      { property: "og:description", content: `View ${params.username}'s I2P Forum profile and posts.` },
       { property: "og:type", content: "profile" },
       { name: "twitter:card", content: "summary" },
     ],

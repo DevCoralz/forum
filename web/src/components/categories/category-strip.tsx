@@ -6,10 +6,10 @@ const icons = { flame: Flame, settings: Settings, crown: Crown, database: Databa
 
 export function CategoryStrip({ categories, isLoading = false }: { categories: Category[]; isLoading?: boolean }) {
   return (
-    <section id="categories" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <section id="categories" className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="section-title">Browse Categories</h2>
-        <a className="text-xs font-medium text-primary" href="#latest">View all →</a>
+        <h2 className="section-title">Categories</h2>
+        <a className="text-xs font-medium text-primary" href="#latest">Latest posts</a>
       </div>
       <div className="scrollbar-none flex snap-x gap-2.5 overflow-x-auto pb-2">
         {isLoading && <LoadingSpinner />}

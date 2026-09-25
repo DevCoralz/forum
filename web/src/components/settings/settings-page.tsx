@@ -58,7 +58,7 @@ export function SettingsPage() {
           <div className="min-w-0">
             <p className="text-[.68rem] font-semibold uppercase text-primary">Your account</p>
             <h1 className="mt-1 font-display text-2xl font-semibold text-foreground sm:text-3xl">Settings</h1>
-            <p className="mt-2 text-xs text-muted-foreground sm:text-sm">Manage your CORALZ identity, security, privacy, and access.</p>
+            <p className="mt-2 text-xs text-muted-foreground sm:text-sm">Manage your I2P Forum identity, security, privacy, and access.</p>
           </div>
           <Button asChild variant="coralzOutline" size="sm"><Link to="/profile/$username" params={{ username: user.username }}>View profile</Link></Button>
         </div>
@@ -328,7 +328,7 @@ function SubscriptionSettings() {
         </div>
       </div>
       <div className="settings-section">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4"><div><p className="text-sm font-medium text-foreground">Access management</p><p className="mt-1 text-xs text-muted-foreground">Payments and premium status are managed by CORALZ administrators.</p></div><MonitorSmartphone className="size-5 text-primary" /></div>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4"><div><p className="text-sm font-medium text-foreground">Access management</p><p className="mt-1 text-xs text-muted-foreground">Premium status is managed by I2P Forum administrators.</p></div><MonitorSmartphone className="size-5 text-primary" /></div>
       </div>
       <div className="mt-5 border-l-2 border-primary/50 bg-primary/5 px-4 py-3 text-xs leading-5 text-muted-foreground">There are no prices on individual posts. Your account access determines which posts you can open.</div>
     </div>

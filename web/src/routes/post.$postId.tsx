@@ -20,14 +20,14 @@ export const Route = createFileRoute("/post/$postId")({
   loader: ({ params }) => loadPost(params.postId),
   pendingComponent: LoadingSpinner,
   head: ({ loaderData }) => {
-    if (!loaderData) return { meta: [{ title: "Post not found — CORALZ" }, { name: "robots", content: "noindex" }] };
+    if (!loaderData) return { meta: [{ title: "Post not found — I2P Forum" }, { name: "robots", content: "noindex" }] };
     const { title } = loaderData;
-    const excerpt = `${title} — a ${loaderData.category} post on CORALZ.`;
+    const excerpt = `${title} — a ${loaderData.category} post on I2P Forum.`;
     return {
       meta: [
-        { title: `${title} — CORALZ` },
+        { title: `${title} — I2P Forum` },
         { name: "description", content: excerpt },
-        { property: "og:title", content: `${title} — CORALZ` },
+        { property: "og:title", content: `${title} — I2P Forum` },
         { property: "og:description", content: excerpt },
         { property: "og:type", content: "article" },
         { name: "twitter:card", content: "summary" },

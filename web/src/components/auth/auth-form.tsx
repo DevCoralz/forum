@@ -52,7 +52,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">Keep exploring</Link>
       </header>
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center pb-16">
-        <h1 className="font-display text-3xl font-semibold text-foreground">{isSignup ? "Join Coralz" : "Welcome back"}</h1>
+        <h1 className="font-display text-3xl font-semibold text-foreground">{isSignup ? "Create an I2P Forum account" : "Log in"}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {isSignup ? "Create an account to view and download full content." : "Log in to unlock posts and items."}
         </p>
@@ -84,7 +84,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           </Button>
         </form>
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          {isSignup ? "Already a member? " : "New to Coralz? "}
+          {isSignup ? "Already a member? " : "New to I2P Forum? "}
           <Link to={isSignup ? "/login" : "/signup"} className="font-medium text-primary hover:underline">
             {isSignup ? "Log in" : "Sign up"}
           </Link>

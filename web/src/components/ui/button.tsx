@@ -10,8 +10,8 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
-        coralz: "rounded-full bg-primary text-primary-foreground shadow-glow hover:bg-primary-strong",
-        coralzOutline: "rounded-full border border-primary/40 bg-surface/40 text-foreground hover:bg-primary/10 hover:border-primary/70",
+        coralz: "rounded-sm bg-primary text-primary-foreground hover:bg-primary/85",
+        coralzOutline: "rounded-sm border border-primary/45 bg-surface/60 text-foreground hover:bg-primary/10 hover:border-primary/80",
         destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline:
           "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",

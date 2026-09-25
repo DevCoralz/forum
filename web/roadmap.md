@@ -1,4 +1,4 @@
-# Coralz Forum — connect frontend to live backend
+# I2P Forum — connect frontend to live backend
 
 Live API: https://api-forum.coralz.de5.net/api/v1 (FastAPI, cookie session + bearer token)
 Status: services layer done (src/services: api, auth, posts, profiles, messages, mappers).
@@ -26,7 +26,8 @@ Status: services layer done (src/services: api, auth, posts, profiles, messages,
       blocked by the backend 500; post feed empty because the backend has no posts yet)
 - [x] Fixed: login form didn't update the auth context — header showed "Login" until reload
       (auth-form now signs in through useAuth)
-- [ ] After this: user has frontend design changes queued (ask what they are)
+- [x] Rename the product to I2P Forum and replace the blue promotional design with the selected gold-led cyber-noir forum system
+- [x] Replace the hero with a direct forum index, use a vertical page-list menu, and simplify profiles
 
 ## Post access (done)
 - [x] Lists (home, profile, similar) are title-only — server sends no excerpt/content
