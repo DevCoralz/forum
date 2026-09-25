@@ -49,6 +49,8 @@ export interface PostSummary {
 export interface PostDetail extends Omit<PostSummary, "protectedContent"> {
   /** Only returned by the server when the viewer is premium or has liked + commented. */
   body?: string;
+  /** Why content is hidden: "login" | "premium" | "interact"; undefined when readable. */
+  lockReason?: "login" | "premium" | "interact";
   likedByViewer: boolean;
   commentedByViewer: boolean;
 }

@@ -19,7 +19,8 @@ export const Route = createFileRoute("/post/$postId")({
   loader: ({ params }) => loadPost(params.postId),
   head: ({ loaderData }) => {
     if (!loaderData) return { meta: [{ title: "Post not found — CORALZ" }, { name: "robots", content: "noindex" }] };
-    const { title, excerpt } = loaderData;
+    const { title } = loaderData;
+    const excerpt = `${title} — a ${loaderData.category} post on CORALZ.`;
     return {
       meta: [
         { title: `${title} — CORALZ` },

@@ -11,14 +11,27 @@ import { ApiError } from "@/services/api";
 import { useAuth } from "@/hooks/use-auth";
 import type { PostComment, PostDetail, PostSummary } from "@/types/community";
 
-export function PostDetailPage({ post }: { post: PostDetail }) {
+export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [liked, setLiked] = useState(post.likedByViewer);
+  // The server decides what this viewer may read. The first render may come from a
+  // signed-out server render, so always re-fetch in the browser with the session.
+  const postQuery = useQuery({
+    queryKey: ["post", initialPost.id, user?.id ?? "guest"],
+    queryFn: () => postsService.getPost(initialPost.id),
+    initialData: initialPost,
+    initialDataUpdatedAt: 0,
+  });
+  const post = postQuery.data;
+  const [likedOverride, setLiked] = useState<boolean | null>(null);
+  const liked = likedOverride ?? post.likedByViewer;
 
-  const isPremiumViewer = user ? user.role === "premium" || user.role === "admin" || user.role === "super_admin" : false;
   const isLockedPost = post.access === "premium";
-  const unlocked = !isLockedPost || isPremiumViewer || (post.body && post.body.length > 0);
+  const unlocked = !post.lockReason && post.body !== undefined;
+  const refreshPost = () => {
+    setLiked(null);
+    void queryClient.invalidateQueries({ queryKey: ["post", post.id] });
+  };
 
   const commentsQuery = useQuery({
     queryKey: ["comments", post.id],
@@ -35,6 +48,7 @@ export function PostDetailPage({ post }: { post: PostDetail }) {
     onSuccess: (result) => {
       setLiked(result.liked);
       void queryClient.invalidateQueries({ queryKey: ["posts"] });
+      if (!unlocked) refreshPost();
     },
     onError: (error) => toast.error(error instanceof ApiError && error.status === 401 ? "Log in to like posts." : "Couldn't save your like. Try again."),
   });
@@ -44,6 +58,7 @@ export function PostDetailPage({ post }: { post: PostDetail }) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["comments", post.id] });
       void queryClient.invalidateQueries({ queryKey: ["posts"] });
+      if (!unlocked) refreshPost();
     },
     onError: (error) => toast.error(error instanceof ApiError && error.status === 401 ? "Log in to comment." : "Couldn't post your comment. Try again."),
   });
@@ -84,9 +99,26 @@ export function PostDetailPage({ post }: { post: PostDetail }) {
             <div className="post-lock">
               <LockKeyhole className="size-6 text-primary" />
               <strong>This post is locked</strong>
-              <p>Premium members can open it right away.</p>
-              {!user && <Button asChild variant="coralz" size="sm"><a href="/login">Log in</a></Button>}
-              {!isPremiumViewer && user && <Button asChild variant="coralz" size="sm"><a href="/settings"><Crown /> Go Premium</a></Button>}
+              {post.lockReason === "premium" ? (
+                <>
+                  <p>This is a premium post. Premium members can open it right away.</p>
+                  <Button asChild variant="coralz" size="sm"><a href="/settings"><Crown /> Go Premium</a></Button>
+                </>
+              ) : post.lockReason === "interact" ? (
+                <>
+                  <p>Like and comment to unlock this post.</p>
+                  <ul className="flex gap-4 text-xs text-muted-foreground">
+                    <li className={liked ? "text-primary" : ""}><Heart className="mr-1 inline size-3.5" />{liked ? "Liked" : "Like it"}</li>
+                    <li className={post.commentedByViewer ? "text-primary" : ""}><MessageCircle className="mr-1 inline size-3.5" />{post.commentedByViewer ? "Commented" : "Leave a comment"}</li>
+                  </ul>
+                  <p className="text-xs text-muted-foreground">Premium members skip this step.</p>
+                </>
+              ) : (
+                <>
+                  <p>Log in to read this post.</p>
+                  <Button asChild variant="coralz" size="sm"><a href="/login">Log in</a></Button>
+                </>
+              )}
             </div>
           )}
         </div>

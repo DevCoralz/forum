@@ -25,7 +25,6 @@ export function PostRow({ post }: { post: PostSummary }) {
           </h3>
           {post.access === "premium" && <span className="premium-badge"><LockKeyhole /> Premium</span>}
         </div>
-        <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-muted-foreground sm:pr-40">{post.excerpt}</p>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           <span className="category-tag">{post.category}{post.subcategory ? ` · ${post.subcategory}` : ""}</span>
           <div className="flex items-center gap-4 text-[.7rem] text-muted-foreground">

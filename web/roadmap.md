@@ -27,3 +27,7 @@ Status: services layer done (src/services: api, auth, posts, profiles, messages,
 - [x] Fixed: login form didn't update the auth context — header showed "Login" until reload
       (auth-form now signs in through useAuth)
 - [ ] After this: user has frontend design changes queued (ask what they are)
+
+## Post access (done)
+- [x] Lists (home, profile, similar) are title-only — server sends no excerpt/content
+- [x] Detail: guests → login lock; free members → unlock after like + comment; premium post → premium only; premium/author/admin see immediately (server returns `lock_reason`)

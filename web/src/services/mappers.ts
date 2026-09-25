@@ -67,6 +67,7 @@ export interface RawPostDetail extends RawPostSummary {
   content?: string | null;
   liked_by_viewer?: boolean;
   commented_by_viewer?: boolean;
+  lock_reason?: "login" | "premium" | "interact" | null;
 }
 
 export interface RawComment {
@@ -260,6 +261,8 @@ export function toPostDetail(
     commentedByViewer: Boolean(raw.commented_by_viewer),
   };
   if (raw.content) detail.body = raw.content;
+  if (raw.lock_reason) detail.lockReason = raw.lock_reason;
+  else if (raw.is_locked && !raw.content) detail.lockReason = "login";
   return detail;
 }
 
