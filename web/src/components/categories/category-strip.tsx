@@ -1,4 +1,5 @@
 import { Cookie, Crown, Database, FileText, Flame, Grid2X2, Settings } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import type { Category } from "@/types/community";
 
 const icons = { flame: Flame, settings: Settings, crown: Crown, database: Database, cookie: Cookie, file: FileText, grid: Grid2X2 };
@@ -11,15 +12,9 @@ export function CategoryStrip({ categories, isLoading = false }: { categories: C
         <a className="text-xs font-medium text-primary" href="#latest">View all →</a>
       </div>
       <div className="scrollbar-none flex snap-x gap-2.5 overflow-x-auto pb-2">
-        {isLoading &&
-          [0, 1, 2, 3, 4].map((index) => (
-            <div key={index} className="category-pill animate-pulse" data-tone="cyan">
-              <span className="category-icon bg-surface/50" />
-              <span className="text-left"><strong className="block h-3 w-20 rounded bg-surface" /><small className="mt-1 block h-2 w-12 rounded bg-surface/70" /></span>
-            </div>
-          ))}
+        {isLoading && <LoadingSpinner />}
         {!isLoading && categories.length === 0 && (
-          <p className="py-4 text-sm text-muted-foreground">Categories will appear as soon as the server responds.</p>
+          <p className="py-4 text-sm text-muted-foreground">No category</p>
         )}
         {categories.map((category) => {
           const Icon = icons[category.icon];

@@ -91,7 +91,7 @@ export function ProfilePage({ profile }: { profile: CommunityProfile }) {
           <div className="pt-6"><PostFeed posts={postsQuery.data ?? []} isLoading={postsQuery.isLoading} /></div>
         ) : (
           <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-            <p className="border-y border-border py-10 text-center text-sm text-muted-foreground">Public activity will appear here.</p>
+            <p className="border-y border-border py-10 text-center text-sm text-muted-foreground">No activity</p>
           </section>
         )}
       </main>

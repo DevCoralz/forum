@@ -37,6 +37,9 @@ export function assetUrl(path?: string | null): string | undefined {
   return `${API_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const retryableStatus = (status: number) => status === 502 || status === 503 || status === 504;
+
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   if (!API_URL) {
     throw new ApiError("VITE_API_URL is not configured", 503);
@@ -44,34 +47,48 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
 
   const versionedPath = `/api/v1${path.startsWith("/") ? path : `/${path}`}`;
   const token = getToken();
+  const method = (init?.method ?? "GET").toUpperCase();
+  // Reads are retried so a slow or waking backend never takes a page down with
+  // a transient first-request failure. Writes are always sent exactly once.
+  const maxAttempts = method === "GET" ? 3 : 1;
 
-  let response: Response;
-  try {
-    response = await fetch(`${API_URL}${versionedPath}`, {
-      ...init,
-      credentials: "include",
-      headers: {
-        Accept: "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...init?.headers,
-      },
-    });
-  } catch {
-    throw new ApiError("Could not reach the server", 503);
-  }
-
-  if (!response.ok) {
-    let message = `Request failed with status ${response.status}`;
+  for (let attempt = 1; ; attempt += 1) {
+    let response: Response;
     try {
-      const body = (await response.clone().json()) as { detail?: unknown };
-      if (typeof body?.detail === "string") message = body.detail;
+      response = await fetch(`${API_URL}${versionedPath}`, {
+        ...init,
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...init?.headers,
+        },
+      });
     } catch {
-      /* non-JSON error body */
+      if (attempt < maxAttempts) {
+        await sleep(350 * attempt);
+        continue;
+      }
+      throw new ApiError("Could not reach the server", 503);
     }
-    if (response.status === 401) setToken(null);
-    throw new ApiError(message, response.status);
-  }
 
-  if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
+    if (!response.ok) {
+      if (retryableStatus(response.status) && attempt < maxAttempts) {
+        await sleep(350 * attempt);
+        continue;
+      }
+      let message = `Request failed with status ${response.status}`;
+      try {
+        const body = (await response.clone().json()) as { detail?: unknown };
+        if (typeof body?.detail === "string") message = body.detail;
+      } catch {
+        /* non-JSON error body */
+      }
+      if (response.status === 401) setToken(null);
+      throw new ApiError(message, response.status);
+    }
+
+    if (response.status === 204) return undefined as T;
+    return response.json() as Promise<T>;
+  }
 }

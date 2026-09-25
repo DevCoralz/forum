@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Crown, Eye, Heart, LockKeyhole, MessageCircle, MoreVertical, Pin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AuthorIdentity } from "@/components/profiles/author-identity";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/hooks/use-auth";
 import type { PostSummary } from "@/types/community";
 
@@ -82,20 +83,9 @@ export function PostFeed({ posts, isLoading = false }: { posts: PostSummary[]; i
       </div>
       {showPremiumWall && <PremiumBlockade className="mb-4" />}
       {isLoading ? (
-        <div className="post-stream">
-          {[0, 1, 2, 3].map((index) => (
-            <div key={index} className="post-row animate-pulse space-y-3">
-              <div className="flex items-center gap-2"><span className="avatar bg-surface" /><span className="h-3 w-24 rounded bg-surface" /></div>
-              <div className="h-3.5 w-3/4 rounded bg-surface" />
-              <div className="h-3 w-full rounded bg-surface/70" />
-            </div>
-          ))}
-        </div>
+        <LoadingSpinner />
       ) : visible.length === 0 ? (
-        <p className="border-y border-border py-10 text-center text-sm text-muted-foreground">
-          No posts here yet{filter !== "all" ? ` in the ${filter} tab` : ""} — be the first to{" "}
-          <a className="text-primary" href="/write">write one</a>.
-        </p>
+        <p className="border-y border-border py-10 text-center text-sm text-muted-foreground">No post</p>
       ) : (
         <div className="post-stream">{visible.map((post) => <PostRow key={post.id} post={post} />)}</div>
       )}

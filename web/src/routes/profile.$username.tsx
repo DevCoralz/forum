@@ -1,4 +1,5 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { ProfilePage } from "@/components/profiles/profile-page";
@@ -17,6 +18,7 @@ async function loadProfile(username: string): Promise<CommunityProfile> {
 
 export const Route = createFileRoute("/profile/$username")({
   loader: ({ params }) => loadProfile(params.username),
+  pendingComponent: LoadingSpinner,
   head: ({ params }) => ({
     meta: [
       { title: `${params.username} — CORALZ Profile` },

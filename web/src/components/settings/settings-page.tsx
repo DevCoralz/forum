@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { profilesService } from "@/services/profiles";
 import { ApiError } from "@/services/api";
@@ -44,7 +45,7 @@ export function SettingsPage() {
     return (
       <div className="profile-shell">
         <SiteHeader />
-        <p className="p-10 text-center text-sm text-muted-foreground">Loading your account…</p>
+        <LoadingSpinner />
       </div>
     );
   }
@@ -244,9 +245,9 @@ function SecuritySettings() {
       <div className="settings-section">
         <h3 className="text-sm font-medium text-foreground">Signed-in sessions</h3>
         <div className="mt-3">
-          {sessionsQuery.isLoading && <p className="py-3 text-xs text-muted-foreground">Loading sessions…</p>}
+          {sessionsQuery.isLoading && <LoadingSpinner className="py-3" />}
           {sessions.map((session) => <div key={session.id} className="settings-row"><div className="flex min-w-0 items-center gap-3"><Laptop className="size-4 shrink-0 text-primary" /><div className="min-w-0"><p className="truncate text-xs font-medium text-foreground">{session.device} {session.current && <span className="ml-1 text-primary">Current</span>}</p><p className="mt-1 truncate text-[.68rem] text-muted-foreground">{session.location} · {session.lastActive}</p></div></div>{!session.current && <Button variant="ghost" size="sm" onClick={() => revoke(session.id)}>Revoke</Button>}</div>)}
-          {!sessionsQuery.isLoading && sessions.length === 0 && <p className="py-3 text-xs text-muted-foreground">No other sessions found.</p>}
+          {!sessionsQuery.isLoading && sessions.length === 0 && <p className="py-3 text-xs text-muted-foreground">No session</p>}
         </div>
       </div>
     </div>
@@ -283,7 +284,7 @@ function PrivacySettings() {
     return (
       <div>
         <SectionHeading title="Privacy" description="Control who can view your profile and interact with you." />
-        <p className="settings-section mt-5 text-xs text-muted-foreground">{privacyQuery.isLoading ? "Loading your privacy settings…" : "Privacy settings could not be loaded."}</p>
+        {privacyQuery.isLoading ? <LoadingSpinner className="py-3" /> : <p className="settings-section mt-5 text-xs text-muted-foreground">Privacy settings could not be loaded.</p>}
       </div>
     );
   }

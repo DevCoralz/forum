@@ -1,4 +1,5 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { PostDetailPage } from "@/components/posts/post-detail-page";
@@ -17,6 +18,7 @@ async function loadPost(postId: string): Promise<PostDetail> {
 
 export const Route = createFileRoute("/post/$postId")({
   loader: ({ params }) => loadPost(params.postId),
+  pendingComponent: LoadingSpinner,
   head: ({ loaderData }) => {
     if (!loaderData) return { meta: [{ title: "Post not found — CORALZ" }, { name: "robots", content: "noindex" }] };
     const { title } = loaderData;

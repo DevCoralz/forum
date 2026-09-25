@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { AuthorIdentity } from "@/components/profiles/author-identity";
 import { messagesService } from "@/services/messages";
 import { ApiError, assetUrl } from "@/services/api";
@@ -116,10 +117,10 @@ function ChatStream() {
       </div>
 
       <div ref={listRef} className="h-[55vh] min-h-72 overflow-y-auto border-t border-border/60 py-2" aria-live="polite">
-        {streamQuery.isLoading && <p className="py-6 text-center text-sm text-muted-foreground">Loading the chat…</p>}
+        {streamQuery.isLoading && <LoadingSpinner className="py-6" />}
         {streamQuery.isError && <p className="py-6 text-center text-sm text-muted-foreground">The chat is unavailable right now.</p>}
         {!streamQuery.isLoading && !streamQuery.isError && messages.length === 0 && (
-          <p className="py-6 text-center text-sm text-muted-foreground">No messages yet — say hello.</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">No message</p>
         )}
         {messages.map((m) => (
           <div key={m.id} className="flex flex-col gap-1 border-b border-border/30 px-1 py-2.5">
@@ -234,9 +235,9 @@ function DirectMessages() {
 
       {debounced.length >= 2 ? (
         <div className="mt-4 border-y border-border/70">
-          {searchQuery.isLoading && <p className="py-6 text-center text-sm text-muted-foreground">Searching…</p>}
+          {searchQuery.isLoading && <LoadingSpinner className="py-6" />}
           {searchQuery.isError && <p className="py-6 text-center text-sm text-muted-foreground">Member search is unavailable right now.</p>}
-          {!searchQuery.isLoading && !searchQuery.isError && results.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">No members found.</p>}
+          {!searchQuery.isLoading && !searchQuery.isError && results.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">No member</p>}
           {results.map((u) => (
             <div key={u.id} className="flex items-center justify-between gap-3 border-b border-border/30 py-3 last:border-0">
               <AuthorIdentity author={u} />
@@ -246,10 +247,10 @@ function DirectMessages() {
         </div>
       ) : (
         <div className="mt-4 border-y border-border/70">
-          {threadsQuery.isLoading && <p className="py-6 text-center text-sm text-muted-foreground">Loading your chats…</p>}
+          {threadsQuery.isLoading && <LoadingSpinner className="py-6" />}
           {threadsQuery.isError && <p className="py-6 text-center text-sm text-muted-foreground">Your chats are unavailable right now.</p>}
           {!threadsQuery.isLoading && !threadsQuery.isError && threads.length === 0 && (
-            <p className="py-6 text-center text-sm text-muted-foreground">No chats yet — search for a member to start one.</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">No chat</p>
           )}
           {threads.map((t) => (
             <button key={t.id} onClick={() => toast.info("Chat opens when the backend supports private messaging.")} className="flex w-full items-center gap-3 border-b border-border/30 py-3 text-left last:border-0 hover:bg-surface/40">

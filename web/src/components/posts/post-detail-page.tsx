@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Crown, Heart, LockKeyhole, MessageCircle, Send, Eye, Loader2 } from "lucide-react";
+import { Crown, Heart, LockKeyhole, MessageCircle, Send, Eye } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "sonner";
 import { FormattedText } from "@/lib/telegram-format";
 import { Button } from "@/components/ui/button";
@@ -28,8 +29,17 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
 
   const isLockedPost = post.access === "premium";
   const unlocked = !post.lockReason && post.body !== undefined;
-  /** Liking / commenting can unlock the post, so reload the page to show the fresh state. */
-  const hardRefresh = () => {
+  /** Liking / commenting can unlock the post. Refetch the fresh state first, then
+   * reload so the browser lands directly on the unlocked content. */
+  const hardRefresh = async () => {
+    try {
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ["post", post.id], exact: true }),
+        queryClient.refetchQueries({ queryKey: ["comments", post.id] }),
+      ]);
+    } catch {
+      /* reload regardless; the write already succeeded server-side */
+    }
     if (typeof window !== "undefined") window.location.reload();
   };
 
@@ -48,7 +58,7 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
     onSuccess: (result) => {
       setLiked(result.liked);
       void queryClient.invalidateQueries({ queryKey: ["posts"] });
-      hardRefresh();
+      void hardRefresh();
     },
     onError: (error) => toast.error(error instanceof ApiError && error.status === 401 ? "Log in to like posts." : "Couldn't save your like. Try again."),
   });
@@ -56,9 +66,8 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
   const commentMutation = useMutation({
     mutationFn: (body: string) => postsService.addComment(post.id, body),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["comments", post.id] });
       void queryClient.invalidateQueries({ queryKey: ["posts"] });
-      hardRefresh();
+      void hardRefresh();
     },
     onError: (error) => toast.error(error instanceof ApiError && error.status === 401 ? "Log in to comment." : "Couldn't post your comment. Try again."),
   });
@@ -111,7 +120,7 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
                     <li className={liked ? "text-primary" : ""}><Heart className="mr-1 inline size-3.5" />{liked ? "Liked" : "Like it"}</li>
                     <li className={post.commentedByViewer ? "text-primary" : ""}><MessageCircle className="mr-1 inline size-3.5" />{post.commentedByViewer ? "Commented" : "Leave a comment"}</li>
                   </ul>
-                  <p className="text-xs text-muted-foreground">Premium members skip this step.</p>
+                  <p className="text-xs text-muted-foreground">Upgrade Membership To Bypass</p>
                 </>
               ) : (
                 <>
@@ -142,7 +151,7 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
         <h2 className="section-title mb-4">Comments</h2>
         <ul className="divide-y divide-border">
           {commentsQuery.isLoading && (
-            <li className="flex items-center gap-2 py-4 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Loading comments…</li>
+            <li><LoadingSpinner className="py-4" /></li>
           )}
           {comments.map((c) => (
             <li key={c.id} className="py-4">
@@ -154,7 +163,7 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
             </li>
           ))}
           {!commentsQuery.isLoading && comments.length === 0 && (
-            <li className="py-4 text-sm text-muted-foreground">No comments yet.</li>
+            <li className="py-4 text-sm text-muted-foreground">No comment</li>
           )}
         </ul>
         <form onSubmit={submit} className="comment-box">
@@ -166,7 +175,7 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
       <section className="mt-12">
         <h2 className="section-title mb-4">Similar posts</h2>
         {similar.length === 0 ? (
-          <p className="border-y border-border py-8 text-center text-sm text-muted-foreground">No similar posts yet.</p>
+          <p className="border-y border-border py-8 text-center text-sm text-muted-foreground">No post</p>
         ) : (
           <>
             <div className={`post-stream similar-list ${expanded ? "is-expanded" : ""}`}>

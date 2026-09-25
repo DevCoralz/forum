@@ -38,3 +38,11 @@ Status: services layer done (src/services: api, auth, posts, profiles, messages,
 - [x] Like and comment trigger a full page reload so unlocked content appears immediately
 - [x] Free members must like AND comment before the body is revealed (server `lock_reason: interact`)
 - [x] Premium posts show "Upgrade To Premium to view Premium Posts" blockade in feed rows, the Premium/All tabs and the detail page
+
+## Reliability and state cleanup (in progress Sep 2026)
+- [x] Prevent transient first-request failures on page navigation
+- [x] Wait for successful like/comment responses, then refresh post data
+- [x] Use circular-only loading indicators across all pages
+- [x] Shorten all empty states and remove dash-separated explanations
+- [x] Change the interaction bypass message
+- [x] Verify and package the full updated project
