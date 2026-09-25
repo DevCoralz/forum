@@ -74,7 +74,7 @@ class PostSummary(BaseModel):
     author: AuthorOut
     post_type: str
     is_locked: bool
-    excerpt: Optional[str] = None
+    excerpt: Optional[str] = None  # always None: lists are title-only
     view_count: int
     like_count: int
     comment_count: int
@@ -83,7 +83,9 @@ class PostSummary(BaseModel):
 
 class PostDetail(PostSummary):
     content: Optional[str] = None  # None when locked for this viewer
+    lock_reason: Optional[str] = None  # "login" | "premium" | "interact" | None
     liked_by_viewer: bool = False
+    commented_by_viewer: bool = False
 
 
 class CommentCreate(BaseModel):

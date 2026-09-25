@@ -16,6 +16,32 @@ def _viewer_can_see_premium(viewer_role: Optional[str]) -> bool:
     return bool(viewer_role) and viewer_role in PREMIUM_ACCESS_ROLES
 
 
+def _is_staff(viewer_role: Optional[str]) -> bool:
+    return viewer_role in ("admin", "super_admin")
+
+
+def _lock_reason(post: dict, viewer_role: Optional[str], viewer_id: Optional[str]) -> Optional[str]:
+    """Why the viewer can't read this post's content, or None if they can.
+
+    - "login":    not signed in (every post needs an account)
+    - "premium":  premium post and viewer lacks a premium role
+    - "interact": free post, free viewer who hasn't liked AND commented yet
+    Authors and admins always see their own / all posts.
+    """
+    if not viewer_id:
+        return "login"
+    if viewer_id == post["author_id"] or _is_staff(viewer_role):
+        return None
+    premium_viewer = _viewer_can_see_premium(viewer_role)
+    if post["post_type"] == "premium":
+        return None if premium_viewer else "premium"
+    if premium_viewer:
+        return None
+    liked = post_repo.is_liked_by(post["id"], viewer_id)
+    commented = comment_repo.has_commented(post["id"], viewer_id)
+    return None if (liked and commented) else "interact"
+
+
 def _author_out(user_row: dict, labels_by_user: dict[str, list[str]]) -> AuthorOut:
     return AuthorOut(
         id=user_row["id"],
@@ -53,8 +79,8 @@ class PostService:
     def _to_summary(self, post: dict, viewer_role: Optional[str], viewer_id: Optional[str],
                      labels_by_user: dict[str, list[str]], authors_by_id: dict[str, dict]) -> PostSummary:
         author = authors_by_id[post["author_id"]]
+        # Lists are title-only: content/excerpt never leaves the detail endpoint.
         locked = post["post_type"] == "premium" and not _viewer_can_see_premium(viewer_role)
-        excerpt = None if locked else (post["content"][:EXCERPT_LEN])
         return PostSummary(
             id=post["id"],
             title=post["title"],
@@ -64,7 +90,7 @@ class PostService:
             author=_author_out(author, labels_by_user),
             post_type=post["post_type"],
             is_locked=locked,
-            excerpt=excerpt,
+            excerpt=None,
             view_count=post["view_count"],
             like_count=post_repo.like_count(post["id"]),
             comment_count=post_repo.comment_count(post["id"]),
@@ -98,7 +124,8 @@ class PostService:
 
         author = user_repo.find_by_id(post["author_id"])
         labels_by_user = label_repo.list_for_users([post["author_id"]])
-        locked = post["post_type"] == "premium" and not _viewer_can_see_premium(viewer_role)
+        reason = _lock_reason(post, viewer_role, viewer_id)
+        locked = reason is not None
 
         post_repo.increment_view(post_id)
 
@@ -111,9 +138,11 @@ class PostService:
             author=_author_out(author, labels_by_user),
             post_type=post["post_type"],
             is_locked=locked,
-            excerpt=None if locked else post["content"][:EXCERPT_LEN],
+            excerpt=None,
             content=None if locked else post["content"],
+            lock_reason=reason,
             liked_by_viewer=bool(viewer_id and post_repo.is_liked_by(post_id, viewer_id)),
+            commented_by_viewer=bool(viewer_id and comment_repo.has_commented(post_id, viewer_id)),
             view_count=post["view_count"] + 1,
             like_count=post_repo.like_count(post_id),
             comment_count=post_repo.comment_count(post_id),

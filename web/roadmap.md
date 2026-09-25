@@ -31,3 +31,10 @@ Status: services layer done (src/services: api, auth, posts, profiles, messages,
 ## Post access (done)
 - [x] Lists (home, profile, similar) are title-only — server sends no excerpt/content
 - [x] Detail: guests → login lock; free members → unlock after like + comment; premium post → premium only; premium/author/admin see immediately (server returns `lock_reason`)
+
+## Free-tier rules (done Sep 2026)
+- [x] Every registration is created with role `free` (explicit in auth_service.register); admin/super_admin unaffected
+- [x] Lists show the title only; the title is a plain anchor (no underline) that does a full browser navigation to /post/{id}
+- [x] Like and comment trigger a full page reload so unlocked content appears immediately
+- [x] Free members must like AND comment before the body is revealed (server `lock_reason: interact`)
+- [x] Premium posts show "Upgrade To Premium to view Premium Posts" blockade in feed rows, the Premium/All tabs and the detail page

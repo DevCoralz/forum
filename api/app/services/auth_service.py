@@ -56,6 +56,8 @@ class AuthService:
             username=body.username,
             email=body.email,
             password_hash=hash_password(body.password),
+            # Every new account starts on the free plan; upgrades are granted later.
+            role="free",
         )
 
         return RegisterResponse(

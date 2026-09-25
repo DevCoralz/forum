@@ -159,6 +159,15 @@ class CommentRepository:
                 cur.execute("SELECT * FROM post_comments WHERE id=%s", (cid,))
                 return cur.fetchone()
 
+    def has_commented(self, post_id: str, user_id: str) -> bool:
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT 1 FROM post_comments WHERE post_id=%s AND author_id=%s AND status='active' LIMIT 1",
+                    (post_id, user_id),
+                )
+                return cur.fetchone() is not None
+
     def list_for_post(self, post_id: str, limit: int, offset: int) -> list[dict]:
         with get_db() as conn:
             with conn.cursor() as cur:

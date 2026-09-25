@@ -17,7 +17,6 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as WriteRouteImport } from './routes/write'
 import { Route as PostPostIdRouteImport } from './routes/post.$postId'
 import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
-import { Route as ApiProxySplatRouteImport } from './routes/api/proxy/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -59,11 +58,6 @@ const ProfileUsernameRoute = ProfileUsernameRouteImport.update({
   path: '/profile/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiProxySplatRoute = ApiProxySplatRouteImport.update({
-  id: '/api/proxy/$',
-  path: '/api/proxy/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -74,7 +68,6 @@ export interface FileRoutesByFullPath {
   '/write': typeof WriteRoute
   '/post/$postId': typeof PostPostIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
-  '/api/proxy/$': typeof ApiProxySplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -85,7 +78,6 @@ export interface FileRoutesByTo {
   '/write': typeof WriteRoute
   '/post/$postId': typeof PostPostIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
-  '/api/proxy/$': typeof ApiProxySplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -97,7 +89,6 @@ export interface FileRoutesById {
   '/write': typeof WriteRoute
   '/post/$postId': typeof PostPostIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
-  '/api/proxy/$': typeof ApiProxySplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -110,7 +101,6 @@ export interface FileRouteTypes {
     | '/write'
     | '/post/$postId'
     | '/profile/$username'
-    | '/api/proxy/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -121,7 +111,6 @@ export interface FileRouteTypes {
     | '/write'
     | '/post/$postId'
     | '/profile/$username'
-    | '/api/proxy/$'
   id:
     | '__root__'
     | '/'
@@ -132,7 +121,6 @@ export interface FileRouteTypes {
     | '/write'
     | '/post/$postId'
     | '/profile/$username'
-    | '/api/proxy/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -144,7 +132,6 @@ export interface RootRouteChildren {
   WriteRoute: typeof WriteRoute
   PostPostIdRoute: typeof PostPostIdRoute
   ProfileUsernameRoute: typeof ProfileUsernameRoute
-  ApiProxySplatRoute: typeof ApiProxySplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -205,13 +192,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileUsernameRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/proxy/$': {
-      id: '/api/proxy/$'
-      path: '/api/proxy/$'
-      fullPath: '/api/proxy/$'
-      preLoaderRoute: typeof ApiProxySplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -224,7 +204,6 @@ const rootRouteChildren: RootRouteChildren = {
   WriteRoute: WriteRoute,
   PostPostIdRoute: PostPostIdRoute,
   ProfileUsernameRoute: ProfileUsernameRoute,
-  ApiProxySplatRoute: ApiProxySplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

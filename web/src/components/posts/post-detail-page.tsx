@@ -28,9 +28,9 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
 
   const isLockedPost = post.access === "premium";
   const unlocked = !post.lockReason && post.body !== undefined;
-  const refreshPost = () => {
-    setLiked(null);
-    void queryClient.invalidateQueries({ queryKey: ["post", post.id] });
+  /** Liking / commenting can unlock the post, so reload the page to show the fresh state. */
+  const hardRefresh = () => {
+    if (typeof window !== "undefined") window.location.reload();
   };
 
   const commentsQuery = useQuery({
@@ -48,7 +48,7 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
     onSuccess: (result) => {
       setLiked(result.liked);
       void queryClient.invalidateQueries({ queryKey: ["posts"] });
-      if (!unlocked) refreshPost();
+      hardRefresh();
     },
     onError: (error) => toast.error(error instanceof ApiError && error.status === 401 ? "Log in to like posts." : "Couldn't save your like. Try again."),
   });
@@ -58,7 +58,7 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["comments", post.id] });
       void queryClient.invalidateQueries({ queryKey: ["posts"] });
-      if (!unlocked) refreshPost();
+      hardRefresh();
     },
     onError: (error) => toast.error(error instanceof ApiError && error.status === 401 ? "Log in to comment." : "Couldn't post your comment. Try again."),
   });
@@ -101,8 +101,8 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
               <strong>This post is locked</strong>
               {post.lockReason === "premium" ? (
                 <>
-                  <p>This is a premium post. Premium members can open it right away.</p>
-                  <Button asChild variant="coralz" size="sm"><a href="/settings"><Crown /> Go Premium</a></Button>
+                  <p>Upgrade To Premium to view Premium Posts</p>
+                  <Button asChild variant="coralz" size="sm"><a href="/settings"><Crown /> Upgrade To Premium</a></Button>
                 </>
               ) : post.lockReason === "interact" ? (
                 <>
