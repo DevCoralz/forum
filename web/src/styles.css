@@ -354,6 +354,33 @@ h1 { color: var(--red-heading); }
 .admin-coming { display: flex; gap: .7rem; padding: .8rem; border: 1px dashed color-mix(in oklab, var(--border) 90%, transparent); border-radius: .4rem; }
 .admin-menu-link { color: var(--red-heading) !important; font-weight: 600; }
 
+/* ── Verified tick: blue badge with a white check ───────────────────────────── */
+.verified-badge .verified-badge-bg { fill: #1d9bf0; }
+.verified-badge .verified-badge-tick { stroke: #ffffff; }
+
+/* ── Admin media card: one site image for logo, favicon and social preview ─── */
+.admin-media-card { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: .8rem; border: 1px solid var(--border); border-radius: .45rem; background: color-mix(in oklab, var(--surface) 40%, transparent); }
+.admin-media-card .admin-media-preview { display: grid; place-items: center; width: 5.5rem; height: 5.5rem; flex-shrink: 0; border: 1px dashed color-mix(in oklab, var(--border) 90%, transparent); border-radius: .4rem; overflow: hidden; }
+.admin-media-card .admin-media-preview img { width: 100%; height: 100%; object-fit: contain; }
+.admin-media-empty { font-size: .65rem; color: var(--muted-foreground); text-align: center; padding: .4rem; }
+.admin-media-fields { display: flex; flex-direction: column; gap: .3rem; min-width: 12rem; flex: 1; }
+.admin-media-fields strong { font-size: .8rem; color: var(--foreground); }
+.admin-media-fields p { font-size: .68rem; color: var(--muted-foreground); }
+.admin-upload { display: inline-flex; }
+.admin-upload input[type="file"] { display: none; }
+.admin-upload .admin-btn { cursor: pointer; }
+
+/* ── Ad media preview in the admin form ─────────────────────────────────────── */
+.admin-ad-preview { display: flex; align-items: center; gap: .8rem; padding: .6rem; border: 1px solid var(--border); border-radius: .45rem; background: color-mix(in oklab, var(--surface) 40%, transparent); }
+.admin-ad-preview img, .admin-ad-preview video { max-height: 8rem; max-width: 100%; border-radius: .35rem; }
+
+@media (max-width: 640px) {
+  .admin-grid { grid-template-columns: 1fr; }
+  .admin-grid .admin-span2 { grid-column: span 1; }
+  .admin-ad-preview.sm\:col-span-2 { grid-column: span 1; }
+  .admin-media-card .admin-media-preview { width: 100%; height: 9rem; }
+}
+
 /* ── Maintenance screen ─────────────────────────────────────────────────────── */
 .maintenance-screen { display: grid; min-height: 100vh; place-content: center; justify-items: center; gap: 1rem; background: var(--background); color: var(--foreground); text-align: center; padding: 2rem; }
 .maintenance-screen h1 { font-family: var(--font-display); font-size: 1.6rem; }

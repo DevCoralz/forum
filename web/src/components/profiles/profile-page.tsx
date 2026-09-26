@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BadgeCheck, CalendarDays, Crown, Globe, LockKeyhole, MessageCircle, Send, Settings, ShieldCheck } from "lucide-react";
+import { CalendarDays, Crown, Globe, LockKeyhole, MessageCircle, Send, Settings, ShieldCheck } from "lucide-react";
+import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -36,7 +37,7 @@ export function ProfilePage({ profile }: { profile: CommunityProfile }) {
               <div className="min-w-0">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <h1 className="truncate font-display text-xl font-semibold text-foreground sm:text-2xl">{profile.username}</h1>
-                  {profile.verified && <BadgeCheck className="size-4 shrink-0 text-cyan" aria-label="Verified member" />}
+                  {profile.verified && <VerifiedBadge className="size-4" label="Verified member" />}
                   {profile.tier === "premium" && <span className="premium-badge"><Crown /> Premium</span>}
                   {profile.labels.map((label) => <span key={label} className="identity-label">{label}</span>)}
                 </div>

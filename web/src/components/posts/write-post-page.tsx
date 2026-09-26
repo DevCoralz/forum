@@ -9,6 +9,8 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { PromptDialog } from "@/components/ui/prompt-dialog";
 import { FormattedText, FORMAT_MARKERS, type FormatKind } from "@/lib/telegram-format";
 import { postsService } from "@/services/posts";
 import { ApiError } from "@/services/api";
@@ -58,7 +60,7 @@ const tools: { kind: FormatKind; label: string; icon: typeof Bold; shortcut?: st
   { kind: "link", label: "Create link", icon: Link2, shortcut: "Ctrl+K" },
 ];
 
-function applyFormat(el: HTMLTextAreaElement | HTMLInputElement, value: string, kind: FormatKind) {
+function applyFormat(el: HTMLTextAreaElement | HTMLInputElement, value: string, kind: FormatKind, linkUrl?: string) {
   const start = el.selectionStart ?? value.length;
   const end = el.selectionEnd ?? value.length;
   const sel = value.slice(start, end);
@@ -66,10 +68,10 @@ function applyFormat(el: HTMLTextAreaElement | HTMLInputElement, value: string, 
   let cursorStart: number;
   let cursorEnd: number;
   if (kind === "link") {
-    const url = window.prompt("Link URL (https://…)", "https://");
+    const url = linkUrl?.trim();
     if (!url) return null;
     const text = sel || "link text";
-    insert = `[${text}](${url.trim()})`;
+    insert = `[${text}](${url})`;
     cursorStart = start + 1;
     cursorEnd = cursorStart + text.length;
   } else if (kind === "quote") {
@@ -105,6 +107,9 @@ export function WritePostPage() {
   const [focused, setFocused] = useState<"title" | "body">("body");
   const [errors, setErrors] = useState<Partial<Record<keyof Draft, string>>>({});
   const [publishing, setPublishing] = useState(false);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkTarget, setLinkTarget] = useState<"title" | "body">("body");
+  const [discardOpen, setDiscardOpen] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const loaded = useRef(false);
   const titleRef = useRef<HTMLInputElement>(null);
@@ -141,6 +146,7 @@ export function WritePostPage() {
   };
 
   const format = (kind: FormatKind, target: "title" | "body" = focused) => {
+    if (kind === "link") { setLinkTarget(target); setLinkOpen(true); return; }
     const ref: RefObject<HTMLInputElement | HTMLTextAreaElement | null> = target === "title" ? titleRef : bodyRef;
     const el = ref.current;
     if (!el) return;
@@ -148,6 +154,16 @@ export function WritePostPage() {
     const result = applyFormat(el, draft[target], kind);
     if (!result) return;
     set(target, result.next);
+    requestAnimationFrame(() => { el.focus(); el.setSelectionRange(result.cursorStart, result.cursorEnd); });
+  };
+
+  // Applies the link from the themed dialog once a URL is confirmed.
+  const applyLink = (url: string) => {
+    const el = (linkTarget === "title" ? titleRef : bodyRef).current;
+    if (!el) return;
+    const result = applyFormat(el, draft[linkTarget], "link", url);
+    if (!result) return;
+    set(linkTarget, result.next);
     requestAnimationFrame(() => { el.focus(); el.setSelectionRange(result.cursorStart, result.cursorEnd); });
   };
 
@@ -182,7 +198,8 @@ export function WritePostPage() {
     }
   };
 
-  const clear = () => { if (window.confirm("Discard this draft?")) { setDraft(emptyDraft); localStorage.removeItem(DRAFT_KEY); } };
+  const clear = () => setDiscardOpen(true);
+  const discard = () => { setDraft(emptyDraft); localStorage.removeItem(DRAFT_KEY); setDiscardOpen(false); toast.success("Draft discarded"); };
 
   const audience = audiences.find((a) => a.value === draft.audience)!;
   const color = titleColors[draft.titleColor];
@@ -321,6 +338,25 @@ export function WritePostPage() {
           <Button variant="coralz" onClick={publish} disabled={publishing}><Send />{publishing ? "Posting…" : "Post"}</Button>
         </div>
       </div>
+
+      <PromptDialog
+        open={linkOpen}
+        onOpenChange={setLinkOpen}
+        title="Insert link"
+        description={linkTarget === "title" ? "The link is added to the selected title text." : "The link is added to the selected text."}
+        confirmLabel="Insert link"
+        onSubmit={(values) => { if (values["url"]?.trim()) { applyLink(values["url"]); setLinkOpen(false); } }}
+        fields={[{ key: "url", label: "Link URL", type: "url", placeholder: "https://…", required: true }]}
+      />
+      <ConfirmDialog
+        open={discardOpen}
+        onOpenChange={setDiscardOpen}
+        title="Discard this draft?"
+        description="The saved copy on this device will be cleared."
+        confirmLabel="Discard draft"
+        danger
+        onConfirm={discard}
+      />
     </div>
   );
 }

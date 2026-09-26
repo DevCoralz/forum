@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { BadgeCheck, Bell, Check, Crown, Laptop, LockKeyhole, MessageCircle, MonitorSmartphone, Save, Shield, UserRound, UsersRound } from "lucide-react";
+import { Bell, Check, Crown, Laptop, LockKeyhole, MessageCircle, MonitorSmartphone, Save, Shield, UserRound, UsersRound } from "lucide-react";
+import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -180,7 +181,7 @@ function ProfileSettings() {
       <div className="settings-section grid gap-5 sm:grid-cols-2">
         <label className="settings-field"><Label htmlFor="username">Username</Label><Input id="username" className="settings-input" value={username} onChange={(event) => setUsername(event.target.value)} /></label>
         <div className="settings-field"><Label>Account badges</Label><div className="flex h-9 items-center gap-2">
-          {profileQuery.data?.verified && <BadgeCheck className="size-4 text-cyan" />}
+          {profileQuery.data?.verified && <VerifiedBadge className="size-4" />}
           {profileQuery.data?.tier === "premium" && <span className="premium-badge"><Crown /> Premium</span>}
           {profileQuery.data?.labels.map((label) => <span key={label} className="identity-label">{label}</span>)}
         </div></div>

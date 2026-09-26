@@ -40,10 +40,22 @@ Status: services layer done (src/services: api, auth, posts, profiles, messages,
 - [x] Free members must like AND comment before the body is revealed (server `lock_reason: interact`)
 - [x] Premium posts show "Upgrade To Premium to view Premium Posts" blockade in feed rows, the Premium/All tabs and the detail page
 
-## Reliability and state cleanup (in progress Sep 2026)
+## Reliability and state cleanup (done Sep 2026)
 - [x] Prevent transient first-request failures on page navigation
 - [x] Wait for successful like/comment responses, then refresh post data
 - [x] Use circular-only loading indicators across all pages
 - [x] Shorten all empty states and remove dash-separated explanations
 - [x] Change the interaction bypass message
-- [x] Verify and package the full updated project
+
+## Admin repair (Sep 2026)
+- [x] Import the full forum source into the workspace (web + api) so remixes keep it
+- [x] Rebuild the broken admin Site tab layout; one "Site image" upload feeds logo + favicon + social image
+- [x] Replace every native browser prompt/confirm with themed dialogs (admin actions, tag delete, ad delete, link insert, discard draft)
+- [x] Tag assignment picks from tags created on the Tags tab, with a per-member color picker defaulting to the tag color
+- [x] Every admin/ad action button shows its own circular spinner while its request runs
+- [x] Verified tick badge is a blue badge with a white check everywhere (feeds, profiles, settings, admin)
+- [x] Ads tab: media preview after upload, explicit "Post ad" publish button, form resets only on success
+- [x] Verified all admin tabs and dialogs in the browser (desktop) and type check passed
+- [x] Restored VITE_API_URL (.env) so the preview reaches the deployed backend
+- [x] Package the full updated project as a clean ZIP (no git metadata, deps, caches)
+

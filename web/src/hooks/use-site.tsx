@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import { assetUrl } from "@/services/api";
 import { DEFAULT_SITE_NAME, siteService, type SiteBootstrap } from "@/services/site";
 
 interface SiteContextValue {
@@ -26,11 +25,12 @@ export function SiteProvider({ children }: { children: ReactNode }) {
   const ads = query.data?.ads ?? [];
   const siteName = settings.site_name?.trim() || DEFAULT_SITE_NAME;
 
-  // Keep the browser tab and favicon in sync with the admin-managed settings.
+  // Keep the browser tab and share preview in sync with the admin-managed settings.
+  // The single "site image" backs the favicon and social image too.
   useEffect(() => {
     if (typeof document === "undefined") return;
     document.title = siteName;
-    const favicon = settings.site_favicon_url ? assetUrl(settings.site_favicon_url) : null;
+    const favicon = settings.site_favicon_url ?? settings.site_logo_url ?? null;
     if (favicon) {
       let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
       if (!link) {
@@ -40,7 +40,27 @@ export function SiteProvider({ children }: { children: ReactNode }) {
       }
       link.href = favicon;
     }
-  }, [siteName, settings.site_favicon_url]);
+  }, [siteName, settings.site_favicon_url, settings.site_logo_url]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const setMeta = (attribute: string, key: string, content: string) => {
+      let element = document.querySelector<HTMLMetaElement>(`meta[${attribute}="${key}"]`);
+      if (!element) {
+        element = document.createElement("meta");
+        element.setAttribute(attribute, key);
+        document.head.appendChild(element);
+      }
+      element.setAttribute("content", content);
+    };
+    const image = settings.site_og_url ?? settings.site_logo_url ?? null;
+    if (image) {
+      setMeta("property", "og:image", image);
+      setMeta("name", "twitter:image", image);
+    }
+    if (settings.og_title) setMeta("property", "og:title", settings.og_title);
+    if (settings.og_description) setMeta("property", "og:description", settings.og_description);
+  }, [settings.site_og_url, settings.site_logo_url, settings.og_title, settings.og_description]);
 
   const value = useMemo(
     () => ({ settings, ads, siteName, isLoading: query.isLoading }),
