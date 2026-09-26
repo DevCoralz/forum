@@ -16,9 +16,11 @@ import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as WriteRouteImport } from './routes/write'
+import { Route as CategoryCategoryIdRouteImport } from './routes/category.$categoryId'
 import { Route as PostPostIdRouteImport } from './routes/post.$postId'
 import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
 import { Route as ThreadThreadIdRouteImport } from './routes/thread.$threadId'
+import { Route as ToolToolIdRouteImport } from './routes/tool.$toolId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -55,6 +57,11 @@ const WriteRoute = WriteRouteImport.update({
   path: '/write',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CategoryCategoryIdRoute = CategoryCategoryIdRouteImport.update({
+  id: '/category/$categoryId',
+  path: '/category/$categoryId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PostPostIdRoute = PostPostIdRouteImport.update({
   id: '/post/$postId',
   path: '/post/$postId',
@@ -70,6 +77,11 @@ const ThreadThreadIdRoute = ThreadThreadIdRouteImport.update({
   path: '/thread/$threadId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ToolToolIdRoute = ToolToolIdRouteImport.update({
+  id: '/tool/$toolId',
+  path: '/tool/$toolId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -79,9 +91,11 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/write': typeof WriteRoute
+  '/category/$categoryId': typeof CategoryCategoryIdRoute
   '/post/$postId': typeof PostPostIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
+  '/tool/$toolId': typeof ToolToolIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -91,9 +105,11 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/write': typeof WriteRoute
+  '/category/$categoryId': typeof CategoryCategoryIdRoute
   '/post/$postId': typeof PostPostIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
+  '/tool/$toolId': typeof ToolToolIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -104,9 +120,11 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/write': typeof WriteRoute
+  '/category/$categoryId': typeof CategoryCategoryIdRoute
   '/post/$postId': typeof PostPostIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
+  '/tool/$toolId': typeof ToolToolIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -118,9 +136,11 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/write'
+    | '/category/$categoryId'
     | '/post/$postId'
     | '/profile/$username'
     | '/thread/$threadId'
+    | '/tool/$toolId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -130,9 +150,11 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/write'
+    | '/category/$categoryId'
     | '/post/$postId'
     | '/profile/$username'
     | '/thread/$threadId'
+    | '/tool/$toolId'
   id:
     | '__root__'
     | '/'
@@ -142,9 +164,11 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/write'
+    | '/category/$categoryId'
     | '/post/$postId'
     | '/profile/$username'
     | '/thread/$threadId'
+    | '/tool/$toolId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -155,9 +179,11 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   WriteRoute: typeof WriteRoute
+  CategoryCategoryIdRoute: typeof CategoryCategoryIdRoute
   PostPostIdRoute: typeof PostPostIdRoute
   ProfileUsernameRoute: typeof ProfileUsernameRoute
   ThreadThreadIdRoute: typeof ThreadThreadIdRoute
+  ToolToolIdRoute: typeof ToolToolIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -211,6 +237,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WriteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/category/$categoryId': {
+      id: '/category/$categoryId'
+      path: '/category/$categoryId'
+      fullPath: '/category/$categoryId'
+      preLoaderRoute: typeof CategoryCategoryIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/post/$postId': {
       id: '/post/$postId'
       path: '/post/$postId'
@@ -232,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ThreadThreadIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tool/$toolId': {
+      id: '/tool/$toolId'
+      path: '/tool/$toolId'
+      fullPath: '/tool/$toolId'
+      preLoaderRoute: typeof ToolToolIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -243,9 +283,11 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   WriteRoute: WriteRoute,
+  CategoryCategoryIdRoute: CategoryCategoryIdRoute,
   PostPostIdRoute: PostPostIdRoute,
   ProfileUsernameRoute: ProfileUsernameRoute,
   ThreadThreadIdRoute: ThreadThreadIdRoute,
+  ToolToolIdRoute: ToolToolIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

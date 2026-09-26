@@ -60,9 +60,27 @@ class SiteSettingsRequest(BaseModel):
     site_logo_media_id: Optional[str] = None
     site_favicon_media_id: Optional[str] = None
     site_og_media_id: Optional[str] = None
+    site_socials: Optional[dict[str, str]] = Field(default=None)
     og_title: Optional[str] = Field(default=None, max_length=120)
     og_description: Optional[str] = Field(default=None, max_length=300)
     registration_open: Optional[str] = None
+
+    @field_validator("site_socials")
+    @classmethod
+    def valid_socials(cls, v):
+        import json
+        if v is None:
+            return None
+        cleaned = {}
+        for key, value in v.items():
+            if not isinstance(key, str) or not key.strip():
+                continue
+            url = (value or "").strip()
+            if url and not url.startswith(("http://", "https://", "/")):
+                url = f"https://{url}"
+            if url:
+                cleaned[key.strip()[:40]] = url[:500]
+        return json.dumps(cleaned)
 
     @field_validator("site_mode")
     @classmethod
@@ -84,6 +102,13 @@ def _decorate_settings(s: dict) -> dict:
     out["site_logo_url"] = media_url(s.get("site_logo_media_id") or None)
     out["site_favicon_url"] = media_url(s.get("site_favicon_media_id") or None)
     out["site_og_url"] = media_url(s.get("site_og_media_id") or None)
+    import json as _json
+    try:
+        out["site_socials"] = _json.loads(s.get("site_socials") or "{}")
+        if not isinstance(out["site_socials"], dict):
+            out["site_socials"] = {}
+    except Exception:
+        out["site_socials"] = {}
     return out
 
 

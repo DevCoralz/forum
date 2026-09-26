@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  BadgeCheck, Ban, Crown, Flag, Gavel, ImagePlus, KeyRound, Loader2, Lock, Megaphone,
-  Palette, Plus, ShieldCheck, Tag, Trash2, TriangleAlert, UserPlus, Wrench, X,
+  BadgeCheck, Ban, Crown, Database, Cookie, FileText, Flame, FolderPlus, Grid2X2,
+  Eye, EyeOff, Flag, Gavel, ImagePlus, KeyRound, Loader2, Lock, Megaphone,
+  Palette, Pencil, Plus, Settings as SettingsIcon, ShieldCheck, Tag, Trash2, TriangleAlert,
+  UserPlus, Wrench, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -21,12 +23,14 @@ import { ThemeSelect } from "@/components/ui/theme-select";
 import { NotFoundPage } from "@/components/common/not-found-page";
 import { useAuth } from "@/hooks/use-auth";
 import type { AdSlide, AdminUser, TagDefinition } from "@/types/admin";
+import type { CategoryWithCountRaw, SubcategoryWithCountRaw } from "@/services/admin";
 
-type AdminTab = "users" | "tags" | "site" | "ads" | "coming";
+type AdminTab = "users" | "tags" | "categories" | "site" | "ads" | "coming";
 
 const TABS: { id: AdminTab; label: string }[] = [
   { id: "users", label: "Users" },
   { id: "tags", label: "Tags" },
+  { id: "categories", label: "Categories" },
   { id: "site", label: "Site" },
   { id: "ads", label: "Ads" },
   { id: "coming", label: "Settings" },
@@ -75,6 +79,7 @@ export function AdminCenter() {
         <div className="admin-panel">
           {tab === "users" && <UsersTab />}
           {tab === "tags" && <TagsTab />}
+          {tab === "categories" && <CategoriesTab />}
           {tab === "site" && <SiteTab />}
           {tab === "ads" && <AdsTab />}
           {tab === "coming" && <ComingSoonTab />}
@@ -537,10 +542,328 @@ function TagsTab() {
 
 /* ── Site settings ──────────────────────────────────────────────────────────── */
 
+/* ── Categories & subcategories ─────────────────────────────────────────────── */
+
+const CATEGORY_ICONS = {
+  flame: Flame, settings: SettingsIcon, crown: Crown, database: Database,
+  cookie: Cookie, file: FileText, grid: Grid2X2,
+} as const;
+type CategoryIconName = keyof typeof CATEGORY_ICONS;
+
+interface IconDraft { preset: string | null; mediaId: string | null }
+
+function CategoryGlyph({ icon, url }: { icon?: string | null; url?: string | null }) {
+  if (url) return <img src={url} alt="" className="size-4 rounded object-cover" />;
+  const Icon = CATEGORY_ICONS[(icon ?? "grid") as CategoryIconName] ?? Grid2X2;
+  return <Icon className="size-4" aria-hidden />;
+}
+
+function IconPicker({ draft, onChange, busyKey, busyId, onUpload }: {
+  draft: IconDraft;
+  onChange: (next: IconDraft) => void;
+  busyKey: string | null;
+  busyId: string;
+  onUpload: (file: File | null, key: string) => void;
+}) {
+  return (
+    <div className="admin-icon-picker">
+      {(Object.keys(CATEGORY_ICONS) as CategoryIconName[]).map((name) => (
+        <button
+          key={name}
+          type="button"
+          className="admin-icon-pick"
+          data-active={draft.preset === name && !draft.mediaId}
+          onClick={() => onChange({ preset: name, mediaId: null })}
+          aria-label={`Use the ${name} icon`}
+        >
+          <CategoryGlyph icon={name} />
+        </button>
+      ))}
+      <label className="admin-upload">
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif,image/x-icon"
+          hidden
+          onChange={(e) => { onUpload(e.target.files?.[0] ?? null, busyId); e.target.value = ""; }}
+        />
+        <span className="admin-input admin-btn" aria-hidden="true">
+          {busyKey === busyId ? <BusySpinner /> : <ImagePlus className="size-3.5" />}
+          Image
+        </span>
+      </label>
+      {draft.mediaId && (
+        <span className="admin-icon-current" title="Uploaded image icon">
+          <CategoryGlyph icon={null} url={assetUrl(`/api/v1/media/${draft.mediaId}`) ?? null} />
+        </span>
+      )}
+    </div>
+  );
+}
+
+function CategoriesTab() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const query = useQuery({ queryKey: ["admin-categories"], queryFn: adminService.listAdminCategories });
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [newName, setNewName] = useState("");
+  const [newIcon, setNewIcon] = useState<IconDraft>({ preset: null, mediaId: null });
+  const [editCat, setEditCat] = useState<CategoryWithCountRaw | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editIcon, setEditIcon] = useState<IconDraft>({ preset: null, mediaId: null });
+  const [editHidden, setEditHidden] = useState(false);
+  const [deleteCat, setDeleteCat] = useState<CategoryWithCountRaw | null>(null);
+  const [subTarget, setSubTarget] = useState<CategoryWithCountRaw | null>(null);
+  const [subName, setSubName] = useState("");
+  const [subIcon, setSubIcon] = useState<IconDraft>({ preset: null, mediaId: null });
+  const [subEdit, setSubEdit] = useState<SubcategoryWithCountRaw | null>(null);
+  const [subEditName, setSubEditName] = useState("");
+  const [subEditIcon, setSubEditIcon] = useState<IconDraft>({ preset: null, mediaId: null });
+
+  const refresh = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] }),
+      queryClient.invalidateQueries({ queryKey: ["categories"] }),
+      queryClient.invalidateQueries({ queryKey: ["site"] }),
+    ]);
+  };
+
+  async function run(key: string, action: () => Promise<unknown>, done: string) {
+    setBusyKey(key);
+    setFormError(null);
+    try {
+      await action();
+      toast.success(done);
+      await refresh();
+    } catch (e) {
+      const message = errText(e, "Something went wrong");
+      setFormError(message);
+      toast.error(message);
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
+  async function uploadIcon(file: File | null, key: string, set: (d: IconDraft) => void) {
+    if (!file) return;
+    setBusyKey(key);
+    try {
+      const media = await adminService.uploadMedia(file);
+      set({ preset: null, mediaId: media.id });
+    } catch (e) {
+      toast.error(errText(e, "Upload failed"));
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
+  if (query.isLoading) return <LoadingSpinner />;
+  const data = query.data ?? { items: [], subcategories: {} };
+
+  const openEdit = (category: CategoryWithCountRaw) => {
+    setEditCat(category);
+    setEditName(category.name);
+    setEditIcon({ preset: category.icon ?? null, mediaId: category.icon_media_id ?? null });
+    setEditHidden(Boolean(category.is_hidden));
+  };
+  const openSubCreate = (category: CategoryWithCountRaw) => {
+    setSubTarget(category);
+    setSubName("");
+    setSubIcon({ preset: null, mediaId: null });
+  };
+  const openSubEdit = (sub: SubcategoryWithCountRaw) => {
+    setSubEdit(sub);
+    setSubEditName(sub.name);
+    setSubEditIcon({ preset: sub.icon ?? null, mediaId: sub.icon_media_id ?? null });
+  };
+
+  return (
+    <div className="admin-grid">
+      <div className="admin-card admin-span2">
+        <strong>Create a category</strong>
+        <div className="admin-inline-row">
+          <input
+            className="admin-input"
+            placeholder="Category name"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+          />
+          <IconPicker draft={newIcon} onChange={setNewIcon} busyKey={busyKey} busyId="new-cat-icon" onUpload={(f) => uploadIcon(f, "new-cat-icon", setNewIcon)} />
+          <button
+            className="admin-input admin-btn"
+            disabled={busyKey !== null || !newName.trim()}
+            onClick={() => {
+              const name = newName.trim();
+              setBusyKey("create-cat");
+              run("create-cat", () => adminService.createCategory({
+                name, icon: newIcon.preset ?? undefined,
+                icon_media_id: newIcon.mediaId ?? undefined,
+              }), "Category created").finally(() => { setNewName(""); setNewIcon({ preset: null, mediaId: null }); });
+            }}
+          >
+            {busyKey === "create-cat" ? <BusySpinner /> : <Plus className="size-3.5" />} Create
+          </button>
+        </div>
+        {formError && <p className="form-error">{formError}</p>}
+      </div>
+
+      {data.items.map((category) => {
+        const subs = data.subcategories[category.id] ?? [];
+        return (
+          <div key={category.id} className="admin-card admin-span2">
+            <div className="admin-inline-row">
+              <span className="admin-cat-glyph">
+                <CategoryGlyph icon={category.icon ?? null} url={assetUrl(category.icon_url) ?? null} />
+              </span>
+              <strong>{category.name}</strong>
+              {category.is_hidden && <span className="admin-chip admin-chip-muted">Hidden</span>}
+              <span className="admin-chip admin-chip-muted">{category.post_count ?? 0} posts</span>
+              <span className="admin-row-actions">
+                <button className="admin-input admin-btn" title="Rename / change icon"
+                  onClick={() => openEdit(category)}>
+                  <Pencil className="size-3.5" /> Edit
+                </button>
+                <button className="admin-input admin-btn" title="Create subcategory"
+                  onClick={() => openSubCreate(category)}>
+                  <FolderPlus className="size-3.5" /> Subcategory
+                </button>
+                <button className="admin-input admin-btn" title={category.is_hidden ? "Show category" : "Hide category"}
+                  disabled={busyKey !== null}
+                  onClick={() => run(`hide-${category.id}`, () => adminService.updateCategory(category.id, { is_hidden: !category.is_hidden }), category.is_hidden ? "Category is visible again" : "Category hidden")}>
+                  {busyKey === `hide-${category.id}` ? <BusySpinner /> : category.is_hidden ? <Eye className="size-3.5" /> : <EyeOff className="size-3.5" />}
+                </button>
+                {user?.role === "super_admin" && (
+                  <button className="admin-input admin-btn danger" title="Delete category"
+                    onClick={() => setDeleteCat(category)}>
+                    <Trash2 className="size-3.5" />
+                  </button>
+                )}
+              </span>
+            </div>
+            {subs.length > 0 && (
+              <div className="admin-subs">
+                {subs.map((sub) => (
+                  <span key={sub.id} className="admin-chip admin-chip-sub">
+                    <CategoryGlyph icon={sub.icon ?? null} url={assetUrl(sub.icon_url) ?? null} />
+                    {sub.name}
+                    <small>{sub.post_count ?? 0}</small>
+                    <button type="button" title="Edit subcategory" onClick={() => openSubEdit(sub)}><Pencil className="size-3" /></button>
+                    <button type="button" title="Delete subcategory" disabled={busyKey !== null}
+                      onClick={() => run(`del-sub-${sub.id}`, () => adminService.deleteSubcategory(sub.id), "Subcategory deleted")}>
+                      {busyKey === `del-sub-${sub.id}` ? <Loader2 className="size-3 animate-spin" /> : <X className="size-3" />}
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {editCat && (
+        <Dialog open onOpenChange={(open) => { if (!open) setEditCat(null); }}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Edit “{editCat.name}”</DialogTitle></DialogHeader>
+            <label className="admin-dialog-field">Name
+              <input className="admin-input" value={editName} onChange={(e) => setEditName(e.target.value)} />
+            </label>
+            <div className="admin-dialog-field">Icon
+              <IconPicker draft={editIcon} onChange={setEditIcon} busyKey={busyKey} busyId="edit-cat-icon" onUpload={(f) => uploadIcon(f, "edit-cat-icon", setEditIcon)} />
+            </div>
+            <label className="admin-dialog-check">
+              <input type="checkbox" checked={editHidden} onChange={(e) => setEditHidden(e.target.checked)} />
+              Hidden from members
+            </label>
+            <DialogFooter>
+              <button className="admin-input admin-btn" onClick={() => setEditCat(null)}>Cancel</button>
+              <button className="admin-input admin-btn"
+                disabled={busyKey !== null || !editName.trim()}
+                onClick={() => run("edit-cat", () => adminService.updateCategory(editCat.id, {
+                  name: editName.trim(),
+                  icon: editIcon.mediaId ? undefined : (editIcon.preset ?? undefined),
+                  icon_media_id: editIcon.mediaId ?? undefined,
+                  is_hidden: editHidden,
+                }), "Category updated").then(() => setEditCat(null))}>
+                {busyKey === "edit-cat" ? <BusySpinner /> : null} Save
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {subTarget && (
+        <Dialog open onOpenChange={(open) => { if (!open) setSubTarget(null); }}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>New subcategory in “{subTarget.name}”</DialogTitle></DialogHeader>
+            <label className="admin-dialog-field">Name
+              <input className="admin-input" value={subName} onChange={(e) => setSubName(e.target.value)} />
+            </label>
+            <div className="admin-dialog-field">Icon
+              <IconPicker draft={subIcon} onChange={setSubIcon} busyKey={busyKey} busyId="new-sub-icon" onUpload={(f) => uploadIcon(f, "new-sub-icon", setSubIcon)} />
+            </div>
+            <DialogFooter>
+              <button className="admin-input admin-btn" onClick={() => setSubTarget(null)}>Cancel</button>
+              <button className="admin-input admin-btn"
+                disabled={busyKey !== null || !subName.trim()}
+                onClick={() => run("new-sub", () => adminService.createSubcategory(subTarget.id, {
+                  name: subName.trim(),
+                  icon: subIcon.mediaId ? undefined : (subIcon.preset ?? undefined),
+                  icon_media_id: subIcon.mediaId ?? undefined,
+                }), "Subcategory created").then(() => setSubTarget(null))}>
+                {busyKey === "new-sub" ? <BusySpinner /> : <Plus className="size-3.5" />} Create
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {subEdit && (
+        <Dialog open onOpenChange={(open) => { if (!open) setSubEdit(null); }}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Edit “{subEdit.name}”</DialogTitle></DialogHeader>
+            <label className="admin-dialog-field">Name
+              <input className="admin-input" value={subEditName} onChange={(e) => setSubEditName(e.target.value)} />
+            </label>
+            <div className="admin-dialog-field">Icon
+              <IconPicker draft={subEditIcon} onChange={setSubEditIcon} busyKey={busyKey} busyId="edit-sub-icon" onUpload={(f) => uploadIcon(f, "edit-sub-icon", setSubEditIcon)} />
+            </div>
+            <DialogFooter>
+              <button className="admin-input admin-btn" onClick={() => setSubEdit(null)}>Cancel</button>
+              <button className="admin-input admin-btn"
+                disabled={busyKey !== null || !subEditName.trim()}
+                onClick={() => run("edit-sub", () => adminService.updateSubcategory(subEdit.id, {
+                  name: subEditName.trim(),
+                  icon: subEditIcon.mediaId ? undefined : (subEditIcon.preset ?? undefined),
+                  icon_media_id: subEditIcon.mediaId ?? undefined,
+                }), "Subcategory updated").then(() => setSubEdit(null))}>
+                {busyKey === "edit-sub" ? <BusySpinner /> : null} Save
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      <ConfirmDialog
+        open={deleteCat !== null}
+        onOpenChange={(open) => { if (!open) setDeleteCat(null); }}
+        title={`Delete “${deleteCat?.name ?? ""}”?`}
+        description="This cannot be undone. Categories with posts must be emptied first."
+        confirmLabel="Delete"
+        pending={busyKey === "delete-cat"}
+        onConfirm={() => {
+          if (!deleteCat) return;
+          void run("delete-cat", () => adminService.deleteCategory(deleteCat.id), "Category deleted").then(() => setDeleteCat(null));
+        }}
+      />
+    </div>
+  );
+}
+
 function SiteTab() {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["admin-site"], queryFn: adminService.getSiteSettings });
   const [draft, setDraft] = useState<Record<string, string>>({});
+  const [socialsDraft, setSocialsDraft] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
   // Local preview of a freshly uploaded image; it only goes live when saved.
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
@@ -548,10 +871,21 @@ function SiteTab() {
   useEffect(() => () => { if (pendingPreview) URL.revokeObjectURL(pendingPreview); }, [pendingPreview]);
 
   const save = useMutation({
-    mutationFn: (values: Record<string, string>) => adminService.putSiteSettings(values),
+    mutationFn: (values: Record<string, string>) => {
+      const payload: Record<string, string | Record<string, string>> = { ...values };
+      if (Object.keys(socialsDraft).length > 0) {
+        payload["site_socials"] = {
+          ...(typeof saved["site_socials"] === "object" && saved["site_socials"] !== null
+            ? saved["site_socials"] as Record<string, string> : {}),
+          ...socialsDraft,
+        };
+      }
+      return adminService.putSiteSettings(payload);
+    },
     onSuccess: async (fresh) => {
       queryClient.setQueryData(["admin-site"], fresh);
       setDraft({});
+      setSocialsDraft({});
       setPendingPreview(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-site"] }),
@@ -566,7 +900,8 @@ function SiteTab() {
   const saved = (query.data ?? {}) as Record<string, string | null | undefined>;
   const settings: Record<string, string | null | undefined> = { ...saved, ...draft };
   const set = (key: string, value: string) => setDraft((current) => ({ ...current, [key]: value }));
-  const dirty = Object.keys(draft).length > 0;
+  const setSocial = (key: string, value: string) => setSocialsDraft((current) => ({ ...current, [key]: value }));
+  const dirty = Object.keys(draft).length > 0 || Object.keys(socialsDraft).length > 0;
 
   // One image everywhere: beside the name, browser tab icon, and social preview.
   const savedImage = assetUrl(saved["site_logo_url"] ?? saved["site_favicon_url"] ?? saved["site_og_url"] ?? null) ?? null;
@@ -646,6 +981,18 @@ function SiteTab() {
       </label>
       <label>Social preview description
         <input className="admin-input" value={val("og_description")} onChange={(e) => set("og_description", e.target.value)} />
+      </label>
+      <label>Telegram link
+        <input className="admin-input" placeholder="https://t.me/yourchannel" value={socialsDraft["telegram"] ?? val("telegram")} onChange={(e) => setSocial("telegram", e.target.value)} />
+      </label>
+      <label>X / Twitter link
+        <input className="admin-input" placeholder="https://x.com/yourhandle" value={socialsDraft["twitter"] ?? val("twitter")} onChange={(e) => setSocial("twitter", e.target.value)} />
+      </label>
+      <label>Discord link
+        <input className="admin-input" placeholder="https://discord.gg/yourinvite" value={socialsDraft["discord"] ?? val("discord")} onChange={(e) => setSocial("discord", e.target.value)} />
+      </label>
+      <label>YouTube link
+        <input className="admin-input" placeholder="https://youtube.com/@yourchannel" value={socialsDraft["youtube"] ?? val("youtube")} onChange={(e) => setSocial("youtube", e.target.value)} />
       </label>
 
       <div className="admin-span2 flex flex-wrap gap-2">

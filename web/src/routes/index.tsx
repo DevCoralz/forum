@@ -32,7 +32,7 @@ function Index() {
   });
   const postsQuery = useQuery({
     queryKey: ["posts", "latest"],
-    queryFn: () => postsService.listLatest({ limit: 50 }),
+    queryFn: () => postsService.listLatest(50),
     staleTime: 30_000,
   });
 

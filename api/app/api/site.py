@@ -15,6 +15,16 @@ PUBLIC_KEYS = (
 )
 
 
+def _parse_socials(raw: str | None) -> dict[str, str]:
+    import json
+    try:
+        data = json.loads(raw or "{}")
+        return {str(k): str(v) for k, v in data.items() if isinstance(v, str) and v.strip()} \
+            if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
 @router.get("/site")
 def public_site():
     raw = settings_repo.get_all()
@@ -23,6 +33,7 @@ def public_site():
     settings["site_favicon_url"] = media_url(raw.get("site_favicon_media_id") or None)
     settings["site_og_url"] = media_url(raw.get("site_og_media_id") or None)
     settings["registration_open"] = raw.get("registration_open", "true") != "false"
+    settings["site_socials"] = _parse_socials(raw.get("site_socials"))
 
     ads = []
     for ad in settings_repo.list_ads(only_active=True)[:5]:

@@ -20,6 +20,9 @@ class CategoryWithCountOut(BaseModel):
     slug: str
     description: Optional[str] = None
     icon: Optional[str] = None
+    icon_media_id: Optional[str] = None
+    icon_url: Optional[str] = None
+    is_hidden: bool = False
     post_count: int = 0
 
 
@@ -50,18 +53,20 @@ def delete_post(post_id: str, user: CurrentUser = Depends(get_current_user)):
 
 @router.get("/posts/categories/counts", response_model=list[CategoryWithCountOut])
 def categories_with_counts():
-    """Categories with per-category active post counts."""
+    """Categories with per-category active post counts. Hidden ones stay private."""
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                """SELECT c.id, c.name, c.slug, c.description, c.icon,
-                          COUNT(p.id) AS post_count
+                """SELECT c.id, c.name, c.slug, c.description, c.icon, c.icon_media_id,
+                          c.is_hidden, COUNT(p.id) AS post_count
                    FROM post_categories c
                    LEFT JOIN posts p ON p.category_id = c.id AND p.status='active'
+                   WHERE NOT c.is_hidden
                    GROUP BY c.id
                    ORDER BY c.sort_order, c.name"""
             )
             rows = cur.fetchall()
+    from app.api.media import media_url
     return [
         CategoryWithCountOut(
             id=r["id"],
@@ -69,6 +74,8 @@ def categories_with_counts():
             slug=r["slug"],
             description=r.get("description"),
             icon=r.get("icon"),
+            icon_media_id=r.get("icon_media_id"),
+            icon_url=media_url(r.get("icon_media_id") or None),
             post_count=int(r.get("post_count") or 0),
         )
         for r in rows

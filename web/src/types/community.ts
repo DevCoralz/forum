@@ -30,6 +30,27 @@ export interface Category {
   postCount: number;
   icon: "flame" | "settings" | "crown" | "database" | "cookie" | "file" | "grid";
   tone: "rose" | "cyan" | "violet" | "emerald" | "amber" | "blue";
+  /** Uploaded icon stored in the Telegram media channel; shown instead of the preset glyph. */
+  iconUrl?: string;
+  isHidden?: boolean;
+}
+
+export interface Subcategory {
+  id: string;
+  categoryId: string;
+  name: string;
+  slug: string;
+  iconUrl?: string;
+  postCount: number;
+}
+
+export type PostKind = "thread" | "tool";
+
+export interface PostFile {
+  mediaId: string;
+  name?: string;
+  sizeBytes?: number;
+  mimeType?: string;
 }
 
 export interface PostSummary {
@@ -37,10 +58,15 @@ export interface PostSummary {
   title: string;
   excerpt: string;
   category: Category["name"];
+  kind: PostKind;
   subcategory?: string;
+  subcategoryId?: string;
+  subcategoryIconUrl?: string;
+  price?: number;
   access: "free" | "premium";
   author: AuthorIdentity;
   publishedAt: string;
+  publishedAtIso?: string;
   views: string;
   comments: string;
   likes: string;
@@ -55,6 +81,12 @@ export interface PostDetail extends Omit<PostSummary, "protectedContent"> {
   lockReason?: "login" | "premium" | "interact";
   likedByViewer: boolean;
   commentedByViewer: boolean;
+  /** ISO timestamp for exact date + time displays. */
+  publishedAtIso?: string;
+  images?: string[];
+  attachment?: PostFile;
+  file?: PostFile;
+  hasFileAccess?: boolean;
 }
 
 export interface PostComment {

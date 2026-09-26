@@ -1,148 +1,171 @@
 import { apiRequest } from "@/services/api";
+import type { PostComment } from "@/types/community";
 import {
+  type Category,
+  type PostDetail,
+  type PostSummary,
+  type Subcategory,
   toCategory,
   toComment,
   toPostDetail,
   toPostSummary,
-  type RawCategory,
-  type RawComment,
-  type RawPostDetail,
-  type RawPostSummary,
-  type RawSubcategory,
+  toSubcategory,
 } from "@/services/mappers";
-import type { Category, CreatePostInput, PostComment, PostDetail, PostSummary } from "@/types/community";
+import type { CategoryWithCountRaw } from "@/services/admin";
+import type {
+  RawCategory,
+  RawComment,
+  RawPostDetail,
+  RawPostSummary,
+  RawSubcategory,
+} from "@/services/mappers";
 
-const json = { "Content-Type": "application/json" };
+/** Everything the composer collects for one post — thread or tool. */
+export class CreatePostInput {
+  constructor(
+    public title: string,
+    public content: string,
+    public kind: "thread" | "tool",
+    public postType: "free" | "premium",
+    public categoryId?: string,
+    public subcategoryIds: string[] = [],
+    public price?: number,
+    public fileId?: string,
+    public attachmentId?: string,
+    public imageIds: string[] = [],
+    public tags: string[] = [],
+  ) {}
 
-let categoryNames: Map<string, string> = new Map();
-
-function rememberCategories(raw: RawCategory[]) {
-  categoryNames = new Map(raw.map((item) => [item.id, item.name]));
-}
-
-async function ensureCategoryNames() {
-  if (categoryNames.size) return categoryNames;
-  try {
-    // /posts/categories returns the base list; category names are always available.
-    const raw = await apiRequest<RawCategory[]>("/posts/categories");
-    rememberCategories(raw);
-  } catch {
-    /* names fall back to "General" */
+  toApi() {
+    const api: Record<string, unknown> = {
+      title: this.title,
+      content: this.content,
+      kind: this.kind,
+      post_type: this.postType,
+      category_id: this.kind === "thread" ? undefined : this.categoryId,
+      subcategory_ids: this.kind === "thread" ? [] : this.subcategoryIds,
+      price: this.kind === "thread" ? undefined : this.price ?? 0,
+      file_media_id: this.kind === "thread" ? undefined : this.fileId,
+      attachment_media_id: this.kind === "thread" ? this.attachmentId : undefined,
+      image_media_ids: this.kind === "thread" ? this.imageIds : [],
+      tags: this.tags,
+    };
+    for (const key of Object.keys(api)) {
+      if (api[key] === undefined) delete api[key];
+    }
+    return api;
   }
-  return categoryNames;
-}
-
-export interface ListPostsOptions {
-  access?: "all" | "free" | "premium";
-  categoryId?: string;
-  limit?: number;
-  offset?: number;
 }
 
 export const postsService = {
-  /**
-   * Fetch categories. Includes post_count when the backend has the counts
-   * endpoint data; otherwise post_count is 0.
-   */
-  listCategories: async (): Promise<Category[]> => {
-    // Prefer the counts endpoint; fall back to the plain list if not available.
-    let raw: RawCategory[];
-    try {
-      raw = await apiRequest<RawCategory[]>("/posts/categories/counts");
-    } catch {
-      raw = await apiRequest<RawCategory[]>("/posts/categories");
-    }
-    rememberCategories(raw);
-    return raw.map(toCategory);
+  /** Categories for the public site — hidden ones are excluded server-side. */
+  async listCategories(): Promise<Category[]> {
+    const data = await apiRequest<RawCategory[]>("/posts/categories");
+    return data.map(toCategory);
   },
 
-  listSubcategories: async (categoryId: string) =>
-    apiRequest<RawSubcategory[]>(
-      `/posts/categories/${encodeURIComponent(categoryId)}/subcategories`,
-    ),
-
-  listLatest: async (options: ListPostsOptions = {}): Promise<PostSummary[]> => {
-    const params = new URLSearchParams({ sort: "latest" });
-    if (options.categoryId) params.set("category_id", options.categoryId);
-    if (options.access && options.access !== "all") params.set("post_type", options.access);
-    if (options.limit) params.set("limit", String(options.limit));
-    if (options.offset) params.set("offset", String(options.offset));
-
-    const [raw, names] = await Promise.all([
-      apiRequest<RawPostSummary[]>(`/posts?${params.toString()}`),
-      ensureCategoryNames(),
-    ]);
-    const mapped = raw.map((item) => toPostSummary(item, names));
-    if (options.access && options.access !== "all") {
-      return mapped.filter((post) => post.access === options.access);
-    }
-    return mapped;
+  async listCategoriesWithCounts(): Promise<Category[]> {
+    const data = await apiRequest<CategoryWithCountRaw[]>("/posts/categories/counts");
+    return data.map(toCategory);
   },
 
-  /**
-   * List posts by a specific author.
-   * The backend doesn't have an author-filter query param, so we fetch the full
-   * latest list and filter client-side. For large datasets wire a dedicated
-   * backend filter.
-   */
-  listByAuthor: async (username: string): Promise<PostSummary[]> => {
-    const [raw, names] = await Promise.all([
-      apiRequest<RawPostSummary[]>(`/posts?sort=latest&limit=50`),
-      ensureCategoryNames(),
-    ]);
-    return raw
-      .map((item) => toPostSummary(item, names))
-      .filter((post) => post.author.username === username);
-  },
-
-  getPost: async (id: string): Promise<PostDetail> => {
-    const [raw, names] = await Promise.all([
-      apiRequest<RawPostDetail>(`/posts/${encodeURIComponent(id)}`),
-      ensureCategoryNames(),
-    ]);
-    return toPostDetail(raw, names);
-  },
-
-  listComments: async (id: string): Promise<PostComment[]> => {
-    const raw = await apiRequest<RawComment[]>(`/posts/${encodeURIComponent(id)}/comments`);
-    return raw.map(toComment);
-  },
-
-  addComment: async (id: string, body: string): Promise<PostComment> => {
-    const raw = await apiRequest<RawComment>(
-      `/posts/${encodeURIComponent(id)}/comments`,
-      { method: "POST", headers: json, body: JSON.stringify({ content: body }) },
+  /** Subcategories of one category — rendered as icon pills on the category page. */
+  async listSubcategories(categoryId: string): Promise<Subcategory[]> {
+    const data = await apiRequest<RawSubcategory[]>(
+      `/posts/categories/${categoryId}/subcategories`,
     );
-    return toComment(raw);
+    return data.map(toSubcategory);
   },
 
-  toggleLike: (id: string) =>
-    apiRequest<{ liked: boolean; like_count?: number }>(
-      `/posts/${encodeURIComponent(id)}/like`,
-      { method: "POST" },
-    ),
+  async listLatest(limit = 12, offset = 0): Promise<PostSummary[]> {
+    const data = await apiRequest<RawPostSummary[]>(`/posts?limit=${limit}&offset=${offset}`);
+    return data.map((r) => toPostSummary(r));
+  },
 
-  createPost: (input: CreatePostInput) =>
-    apiRequest<{ id: string; slug: string }>("/posts", {
+  async listByCategory(categoryId: string, kind?: "thread" | "tool"): Promise<PostSummary[]> {
+    const query = new URLSearchParams({ category_id: categoryId, limit: "50" });
+    if (kind) query.set("kind", kind);
+    const data = await apiRequest<RawPostSummary[]>(`/posts?${query.toString()}`);
+    return data.map((r) => toPostSummary(r));
+  },
+
+  async listBySubcategory(subcategoryId: string): Promise<PostSummary[]> {
+    const data = await apiRequest<RawPostSummary[]>(
+      `/posts?subcategory_id=${subcategoryId}&limit=50`,
+    );
+    return data.map((r) => toPostSummary(r));
+  },
+
+  async getPost(id: string): Promise<PostDetail> {
+    const raw = await apiRequest<RawPostDetail>(`/posts/${id}`);
+    return toPostDetail(raw);
+  },
+
+  async createPost(input: CreatePostInput): Promise<{ id: string }> {
+    return apiRequest<{ id: string }>("/posts", {
       method: "POST",
-      headers: json,
-      body: JSON.stringify({
-        title: input.title,
-        content: input.body,
-        category_id: input.categoryId,
-        ...(input.subcategory ? { subcategory_name: input.subcategory } : {}),
-        post_type: input.audience === "premium" ? "premium" : "free",
-      }),
-    }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input.toApi()),
+    });
+  },
 
-  deletePost: (id: string) =>
-    apiRequest<void>(`/posts/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  async toggleLike(id: string): Promise<{ liked: boolean; likeCount: number }> {
+    const data = await apiRequest<{ liked: boolean; like_count: number }>(
+      `/posts/${id}/like`,
+      { method: "POST" },
+    );
+    return { liked: data.liked, likeCount: data.like_count };
+  },
 
-  listSimilar: async (id: string): Promise<PostSummary[]> => {
-    const [raw, names] = await Promise.all([
-      apiRequest<RawPostSummary[]>(`/posts/${encodeURIComponent(id)}/similar?limit=10`),
-      ensureCategoryNames(),
-    ]);
-    return raw.map((item) => toPostSummary(item, names));
+  async reportPost(id: string, reason: string): Promise<void> {
+    await apiRequest(`/posts/${id}/report`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason }),
+    });
+  },
+
+  async deletePost(id: string): Promise<void> {
+    await apiRequest(`/posts/${id}`, { method: "DELETE" });
+  },
+
+  async listSimilar(id: string): Promise<PostSummary[]> {
+    const data = await apiRequest<RawPostSummary[]>(`/posts/${id}/similar?limit=6`);
+    return data.map((r) => toPostSummary(r));
+  },
+
+  async listComments(id: string): Promise<PostComment[]> {
+    const data = await apiRequest<RawComment[]>(`/posts/${id}/comments?limit=100`);
+    return data.map(toComment);
+  },
+
+  async addComment(id: string, content: string): Promise<PostComment> {
+    const data = await apiRequest<RawComment>(`/posts/${id}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
+    return toComment(data);
+  },
+
+  async listByAuthor(username: string): Promise<PostSummary[]> {
+    const data = await apiRequest<RawPostSummary[]>(`/posts/author/${encodeURIComponent(username)}?limit=30`);
+    return data.map((r) => toPostSummary(r));
+  },
+
+
+  /** Downloads the tool's file after payment; returns the server's filename. */
+  async downloadToolFile(id: string): Promise<string | null> {
+    const { apiBlob } = await import("@/services/api");
+    const { blob, filename } = await apiBlob(`/posts/${id}/file`);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename ?? "download";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    return filename;
   },
 };

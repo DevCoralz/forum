@@ -242,26 +242,30 @@ _TABLES = [
     # ── Post categories ──────────────────────────────────────────────────────
     """
     CREATE TABLE IF NOT EXISTS post_categories (
-        id          VARCHAR(36)  PRIMARY KEY,
-        name        VARCHAR(100) NOT NULL,
-        slug        VARCHAR(100) NOT NULL UNIQUE,
-        description TEXT         NULL,
-        icon        VARCHAR(100) NULL,
-        sort_order  INT          NOT NULL DEFAULT 0,
-        created_by  VARCHAR(36)  NULL,
-        created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+        id            VARCHAR(36)  PRIMARY KEY,
+        name          VARCHAR(100) NOT NULL,
+        slug          VARCHAR(100) NOT NULL UNIQUE,
+        description   TEXT         NULL,
+        icon          VARCHAR(100) NULL,
+        icon_media_id VARCHAR(36)  NULL,
+        is_hidden     BOOLEAN      NOT NULL DEFAULT FALSE,
+        sort_order    INT          NOT NULL DEFAULT 0,
+        created_by    VARCHAR(36)  NULL,
+        created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """,
     """
     CREATE TABLE IF NOT EXISTS post_subcategories (
-        id          VARCHAR(36)  PRIMARY KEY,
-        category_id VARCHAR(36)  NOT NULL,
-        name        VARCHAR(100) NOT NULL,
-        slug        VARCHAR(100) NOT NULL,
-        description TEXT         NULL,
-        sort_order  INT          NOT NULL DEFAULT 0,
-        created_by  VARCHAR(36)  NULL,
-        created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        id            VARCHAR(36)  PRIMARY KEY,
+        category_id   VARCHAR(36)  NOT NULL,
+        name          VARCHAR(100) NOT NULL,
+        slug          VARCHAR(100) NOT NULL,
+        description   TEXT         NULL,
+        icon          VARCHAR(100) NULL,
+        icon_media_id VARCHAR(36)  NULL,
+        sort_order    INT          NOT NULL DEFAULT 0,
+        created_by    VARCHAR(36)  NULL,
+        created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
         UNIQUE KEY uq_subcat_slug (category_id, slug),
         FOREIGN KEY (category_id) REFERENCES post_categories(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
@@ -270,22 +274,61 @@ _TABLES = [
     # ── Posts ─────────────────────────────────────────────────────────────────
     """
     CREATE TABLE IF NOT EXISTS posts (
-        id             VARCHAR(36)   PRIMARY KEY,
-        title          VARCHAR(500)  NOT NULL,
-        slug           VARCHAR(600)  NOT NULL UNIQUE,
-        content        LONGTEXT      NOT NULL,
-        category_id    VARCHAR(36)   NOT NULL,
-        subcategory_id VARCHAR(36)   NULL,
-        author_id      VARCHAR(36)   NOT NULL,
-        post_type      ENUM('free','premium') NOT NULL DEFAULT 'free',
-        status         ENUM('active','flagged','suspended','deleted') NOT NULL DEFAULT 'active',
-        is_pinned      BOOLEAN       NOT NULL DEFAULT FALSE,
-        tags           JSON          NULL,
-        view_count     INT           NOT NULL DEFAULT 0,
-        created_at     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        id                 VARCHAR(36)   PRIMARY KEY,
+        title              VARCHAR(500)  NOT NULL,
+        slug               VARCHAR(600)  NOT NULL UNIQUE,
+        content            LONGTEXT      NOT NULL,
+        category_id        VARCHAR(36)   NOT NULL,
+        subcategory_id     VARCHAR(36)   NULL,
+        author_id          VARCHAR(36)   NOT NULL,
+        kind               ENUM('thread','tool') NOT NULL DEFAULT 'thread',
+        post_type          ENUM('free','premium') NOT NULL DEFAULT 'free',
+        price              DECIMAL(10,2) NULL,
+        file_media_id      VARCHAR(36)   NULL,
+        attachment_media_id VARCHAR(36)  NULL,
+        image_media_ids    JSON          NULL,
+        status             ENUM('active','flagged','suspended','deleted') NOT NULL DEFAULT 'active',
+        is_pinned          BOOLEAN       NOT NULL DEFAULT FALSE,
+        tags               JSON          NULL,
+        view_count         INT           NOT NULL DEFAULT 0,
+        created_at         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (category_id) REFERENCES post_categories(id),
         FOREIGN KEY (author_id)   REFERENCES users(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """,
+    # ── Tool purchases (who already paid for a priced tool) ─────────────────
+    """
+    CREATE TABLE IF NOT EXISTS tool_purchases (
+        post_id    VARCHAR(36) NOT NULL,
+        user_id    VARCHAR(36) NOT NULL,
+        amount     DECIMAL(10,2) NULL,
+        created_at DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (post_id, user_id),
+        FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """,
+    # ── Tools can live in several subcategories at once ──────────────────────
+    """
+    CREATE TABLE IF NOT EXISTS post_subcategory_map (
+        post_id        VARCHAR(36) NOT NULL,
+        subcategory_id VARCHAR(36) NOT NULL,
+        PRIMARY KEY (post_id, subcategory_id),
+        FOREIGN KEY (post_id)        REFERENCES posts(id) ON DELETE CASCADE,
+        FOREIGN KEY (subcategory_id) REFERENCES post_subcategories(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """,
+    # ── Member reports on posts (open queue for staff) ───────────────────────
+    """
+    CREATE TABLE IF NOT EXISTS post_reports (
+        id          VARCHAR(36) PRIMARY KEY,
+        post_id     VARCHAR(36) NOT NULL,
+        reporter_id VARCHAR(36) NULL,
+        reason      VARCHAR(1000) NOT NULL,
+        status      ENUM('open','resolved') NOT NULL DEFAULT 'open',
+        created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """,
 
@@ -518,9 +561,10 @@ _DEFAULT_SETTINGS = [
     ("site_description",  "I2P Forum threads and member discussions."),
     ("site_keywords",     "i2p, forum, threads"),
     ("site_mode",         "production"),
-    ("logo_media_id",     ""),
-    ("favicon_media_id",  ""),
-    ("og_image_media_id", ""),
+    ("site_logo_media_id",     ""),
+    ("site_favicon_media_id",  ""),
+    ("site_og_media_id",       ""),
+    ("site_socials",      "{}"),
     ("og_title",          "I2P Forum"),
     ("og_description",    "I2P Forum threads and member discussions."),
 ]
@@ -606,6 +650,34 @@ def init_db() -> None:
             _add_column(cur, "users", "is_flagged", "is_flagged BOOLEAN NOT NULL DEFAULT FALSE")
             _add_column(cur, "users", "flag_reason", "flag_reason VARCHAR(500) NULL")
             _add_column(cur, "user_labels", "tag_id", "tag_id VARCHAR(36) NULL")
+
+            # Categories / subcategories / tools (older DBs get the new columns)
+            _add_column(cur, "post_categories", "icon_media_id", "icon_media_id VARCHAR(36) NULL")
+            _add_column(cur, "post_categories", "is_hidden", "is_hidden BOOLEAN NOT NULL DEFAULT FALSE")
+            _add_column(cur, "post_subcategories", "icon", "icon VARCHAR(100) NULL")
+            _add_column(cur, "post_subcategories", "icon_media_id", "icon_media_id VARCHAR(36) NULL")
+            _add_column(cur, "posts", "kind", "kind ENUM('thread','tool') NOT NULL DEFAULT 'thread'")
+            _add_column(cur, "posts", "price", "price DECIMAL(10,2) NULL")
+            _add_column(cur, "posts", "file_media_id", "file_media_id VARCHAR(36) NULL")
+            _add_column(cur, "posts", "attachment_media_id", "attachment_media_id VARCHAR(36) NULL")
+            _add_column(cur, "posts", "image_media_ids", "image_media_ids JSON NULL")
+
+            # One site image feeds logo, favicon and social preview. Older DBs
+            # used different key names — copy any saved values across once.
+            for old_key, new_key in (
+                ("logo_media_id", "site_logo_media_id"),
+                ("favicon_media_id", "site_favicon_media_id"),
+                ("og_image_media_id", "site_og_media_id"),
+            ):
+                cur.execute("SELECT `value` FROM site_settings WHERE `key`=%s", (old_key,))
+                old_row = cur.fetchone()
+                cur.execute("SELECT `value` FROM site_settings WHERE `key`=%s", (new_key,))
+                new_row = cur.fetchone()
+                if old_row and old_row["value"] and new_row is not None and not (new_row["value"] or ""):
+                    cur.execute(
+                        "UPDATE site_settings SET `value`=%s WHERE `key`=%s",
+                        (old_row["value"], new_key),
+                    )
 
             # Seed site settings
             for key, val in _DEFAULT_SETTINGS:

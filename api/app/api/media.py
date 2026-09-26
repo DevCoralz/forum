@@ -19,6 +19,18 @@ _SIGS = [
     (b"\x00\x00\x01\x00", "image/x-icon"), (b"\x1aE\xdf\xa3", "video/webm"),
 ]
 
+# Deliverable files (tool downloads): archives and documents, verified by magic
+# bytes so a renamed payload cannot slip through under a false extension.
+_FILE_SIGS = [
+    (b"PK\x03\x04", "application/zip"),
+    (b"PK\x05\x06", "application/zip"),
+    (b"7z\xbc\xaf'\x1c", "application/x-7z-compressed"),
+    (b"Rar!", "application/vnd.rar"),
+    (b"%PDF", "application/pdf"),
+    (b"\x1f\x8b", "application/gzip"),
+    (b"\x00\x61\x70\x70", "application/octet-stream"),
+]
+
 
 def _sniff(head: bytes) -> str | None:
     for sig, mime in _SIGS:
@@ -28,6 +40,9 @@ def _sniff(head: bytes) -> str | None:
         return "image/webp"
     if head[4:8] == b"ftyp":
         return "video/mp4"
+    for sig, mime in _FILE_SIGS:
+        if head.startswith(sig):
+            return mime
     return None
 
 
@@ -59,8 +74,16 @@ async def store_upload(file: UploadFile, uploader_id: str, allow_video: bool = T
         if not mime or mime not in ALLOWED_MEDIA_TYPES:
             raise bad_request("Unsupported file type")
         kind = "video" if mime.startswith("video/") else "image"
+        if mime.startswith(("application/", "text/")):
+            kind = "file"
         if kind == "video" and not allow_video:
             raise bad_request("Videos are not allowed here")
+        # Strip EXIF / ICC / XMP / comments from images and video before the
+        # file is accepted. Archives/documents keep their bytes intact —
+        # rewriting them would corrupt the archive.
+        from app.core.media_sanitize import strip_metadata
+        if kind != "file":
+            size = strip_metadata(path, mime) or size
         name = re.sub(r"[^A-Za-z0-9._-]", "_", file.filename or "file")[:120]
         chat_id, msg_id = await telegram.upload(path, name, mime)
     finally:

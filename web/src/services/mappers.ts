@@ -1,4 +1,6 @@
 import { assetUrl } from "@/services/api";
+
+export type { Category, PostDetail, PostSummary, Subcategory } from "@/types/community";
 import type {
   AccountSession,
   AccountTier,
@@ -9,9 +11,11 @@ import type {
   DirectThreadSummary,
   PostComment,
   PostDetail,
+  PostFile,
   PostSummary,
   PrivacyPreferences,
   SocialLink,
+  Subcategory,
   SubscriptionSummary,
 } from "@/types/community";
 
@@ -34,6 +38,9 @@ export interface RawCategory {
   slug: string;
   description?: string | null;
   icon?: string | null;
+  icon_media_id?: string | null;
+  icon_url?: string | null;
+  is_hidden?: boolean | null;
   post_count?: number | null;
 }
 
@@ -43,16 +50,23 @@ export interface RawSubcategory {
   name: string;
   slug: string;
   description?: string | null;
+  icon?: string | null;
+  icon_media_id?: string | null;
+  icon_url?: string | null;
+  post_count?: number | null;
 }
 
 export interface RawPostSummary {
   id: string;
   title: string;
   slug: string;
+  kind?: string | null;
   category_id: string;
   category_name?: string | null;
   subcategory_id?: string | null;
   subcategory_name?: string | null;
+  subcategory_icon_url?: string | null;
+  price?: number | null;
   author: RawAuthor;
   post_type: string;
   is_locked: boolean;
@@ -64,11 +78,22 @@ export interface RawPostSummary {
   created_at: string;
 }
 
+export interface RawFileInfo {
+  media_id: string;
+  name?: string | null;
+  size_bytes?: number | null;
+  mime_type?: string | null;
+}
+
 export interface RawPostDetail extends RawPostSummary {
   content?: string | null;
   liked_by_viewer?: boolean;
   commented_by_viewer?: boolean;
   lock_reason?: "login" | "premium" | "interact" | null;
+  image_urls?: string[] | null;
+  attachment?: RawFileInfo | null;
+  file?: RawFileInfo | null;
+  has_file_access?: boolean | null;
 }
 
 export interface RawComment {
@@ -221,7 +246,7 @@ export function toAuthor(raw: RawAuthor): AuthorIdentity {
 }
 
 export function toCategory(raw: RawCategory): Category {
-  return {
+  const category: Category = {
     id: raw.id,
     slug: raw.slug,
     name: raw.name,
@@ -229,6 +254,32 @@ export function toCategory(raw: RawCategory): Category {
     icon: categoryIcon(raw.slug, raw.icon),
     tone: pick(TONES, raw.slug),
   };
+  if (raw.is_hidden) category.isHidden = true;
+  const iconUrl = assetUrl(raw.icon_url);
+  if (iconUrl) category.iconUrl = iconUrl;
+  return category;
+}
+
+export function toSubcategory(raw: RawSubcategory): Subcategory {
+  const sub: Subcategory = {
+    id: raw.id,
+    categoryId: raw.category_id,
+    name: raw.name,
+    slug: raw.slug,
+    postCount: raw.post_count ?? 0,
+  };
+  const iconUrl = assetUrl(raw.icon_url);
+  if (iconUrl) sub.iconUrl = iconUrl;
+  return sub;
+}
+
+function toPostFile(raw: RawFileInfo | null | undefined): PostFile | undefined {
+  if (!raw?.media_id) return undefined;
+  const file: PostFile = { mediaId: raw.media_id };
+  if (raw.name !== null && raw.name !== undefined) file.name = raw.name;
+  if (raw.size_bytes !== null && raw.size_bytes !== undefined) file.sizeBytes = Number(raw.size_bytes);
+  if (raw.mime_type !== null && raw.mime_type !== undefined) file.mimeType = raw.mime_type;
+  return file;
 }
 
 export function toPostSummary(
@@ -240,6 +291,7 @@ export function toPostSummary(
     title: raw.title,
     excerpt: raw.excerpt ?? "",
     category: raw.category_name ?? categoryNames.get(raw.category_id) ?? "General",
+    kind: raw.kind === "tool" ? "tool" : "thread",
     access: raw.post_type === "premium" ? "premium" : "free",
     author: toAuthor(raw.author),
     publishedAt: timeAgo(raw.created_at),
@@ -248,7 +300,12 @@ export function toPostSummary(
     likes: compact(raw.like_count ?? 0),
   };
   if (raw.subcategory_name) summary.subcategory = raw.subcategory_name;
+  if (raw.subcategory_id) summary.subcategoryId = raw.subcategory_id;
+  const subIcon = assetUrl(raw.subcategory_icon_url);
+  if (subIcon) summary.subcategoryIconUrl = subIcon;
+  if (raw.price !== null && raw.price !== undefined) summary.price = Number(raw.price);
   if (raw.is_pinned) summary.isPinned = true;
+  summary.publishedAtIso = raw.created_at;
   return summary;
 }
 
@@ -261,10 +318,20 @@ export function toPostDetail(
     ...base,
     likedByViewer: Boolean(raw.liked_by_viewer),
     commentedByViewer: Boolean(raw.commented_by_viewer),
+    publishedAtIso: raw.created_at,
   };
   if (raw.content) detail.body = raw.content;
   if (raw.lock_reason) detail.lockReason = raw.lock_reason;
   else if (raw.is_locked && !raw.content) detail.lockReason = "login";
+  const images = (raw.image_urls ?? []).map((url) => assetUrl(url)).filter((url): url is string => Boolean(url));
+  if (images.length) detail.images = images;
+  const attachment = toPostFile(raw.attachment);
+  if (attachment) detail.attachment = attachment;
+  const file = toPostFile(raw.file);
+  if (file) detail.file = file;
+  if (raw.has_file_access !== null && raw.has_file_access !== undefined) {
+    detail.hasFileAccess = Boolean(raw.has_file_access);
+  }
   return detail;
 }
 

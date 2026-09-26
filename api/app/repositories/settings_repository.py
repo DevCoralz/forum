@@ -10,7 +10,7 @@ from app.core.database import get_db, new_id
 EDITABLE_KEYS = {
     "site_name", "site_currency", "site_footer", "site_description", "site_keywords",
     "site_mode", "site_logo_media_id", "site_favicon_media_id", "site_og_media_id",
-    "og_title", "og_description", "registration_open",
+    "site_socials", "og_title", "og_description", "registration_open",
 }
 
 

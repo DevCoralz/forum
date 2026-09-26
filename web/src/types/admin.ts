@@ -59,6 +59,7 @@ export interface SiteSettings {
   site_logo_url?: string | null;
   site_favicon_url?: string | null;
   site_og_url?: string | null;
+  site_socials?: Record<string, string>;
 }
 
 export interface AuditEntry {

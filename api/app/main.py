@@ -56,6 +56,7 @@ from app.api.client import router as client_router
 from app.api.admin.tags import router as admin_tags_router
 from app.api.admin.users import router as admin_users_router
 from app.api.admin.site import router as admin_site_router
+from app.api.admin.categories import router as admin_categories_router
 
 BIN_DIR = Path(__file__).parent.parent / ".bin"
 
@@ -203,6 +204,7 @@ app.include_router(client_router,      prefix="/api/v1/client", tags=["client"])
 app.include_router(admin_tags_router, prefix="/api/v1/admin", tags=["admin"])
 app.include_router(admin_users_router, prefix="/api/v1/admin", tags=["admin"])
 app.include_router(admin_site_router, prefix="/api/v1/admin", tags=["admin"])
+app.include_router(admin_categories_router, prefix="/api/v1/admin", tags=["admin"])
 
 # ── Static files ──────────────────────────────────────────────────────────────
 os.makedirs(UPLOAD_DIR, exist_ok=True)

@@ -88,4 +88,7 @@ MAX_MEDIA_BYTES: int = 2000 * 1024 * 1024  # Telegram user-session limit
 ALLOWED_MEDIA_TYPES: set[str] = {
     "image/jpeg", "image/png", "image/webp", "image/gif", "image/x-icon",
     "image/vnd.microsoft.icon", "video/mp4", "video/webm",
+    # Tool deliverables (verified by magic bytes before storage)
+    "application/zip", "application/x-7z-compressed", "application/vnd.rar",
+    "application/pdf", "application/gzip", "application/octet-stream",
 }

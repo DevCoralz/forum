@@ -68,3 +68,27 @@ Status: services layer done (src/services: api, auth, posts, profiles, messages,
 - [x] Restored VITE_API_URL (.env) so the preview reaches the deployed backend
 - [x] Package the full updated project as a clean ZIP (no git metadata, deps, caches)
 
+
+## Resume after remix (Sep 26, 2026) — completed
+- [x] Site settings: image preview appears but save doesn't persist; site image/socials/favicon don't update after save
+- [x] Ads don't render at all (admin can save them; must show site-wide incl. category pages)
+- [x] Categories admin: create, delete, hide, rename, change icon
+- [x] Subcategories: create under any category with name + icon; only for tool categories (threads can't have subs)
+- [x] Category pages: subcategory pill buttons (5 per row, transparent, icon + name, no truncation, no scroll; >20 → "see more" loads 20 more), shown right after the ads section
+- [x] Write post page: remove the text formatting preview (live preview already exists); add Threads / Tools tabs
+- [x] Threads: image + file uploads allowed; tool categories can't be picked; subs not available
+- [x] Tools: name, category, subcategories (pill picker with icons), description, price (0 = free, site currency), file delivered after payment
+- [x] Tool cards on category page under the selected subcategory: rectangular transparent card, square subcategory icon + name + timestamp; tap → tool detail page (name, file type/extension, price/free, date, About, file size, file type)
+- [x] Tool detail icon uses the subcategory's icon
+- [x] All media stored on the Telegram channel and served from there; strip metadata/signatures before accepting uploads
+- [x] Verify end to end, then export the full updated project ZIP
+
+### Done in this pass (Sep 26, 2026 late)
+- [x] Admin Categories tab: create/rename/hide/delete categories (delete = super admin only), create/rename/delete subcategories, preset + uploaded image icons, per-action spinners, themed dialogs
+- [x] Site socials editor (Telegram / X / Discord / YouTube) saved into site_socials; header shows the links
+- [x] Fixed listAdminCategories unwrap (endpoint returns {items, subcategories})
+- [x] Tool deliverable uploads: zip/7z/rar/pdf/gzip accepted by magic bytes, classified as files, never metadata-stripped; octet-stream misclassification fixed
+- [x] Restored post interactions the frontend expected: /posts/{id}/comments, /posts/{id}/report, /posts/author/{username}; post_reports table added
+- [x] Frontend typecheck clean; backend compiles; .env restored (VITE_API_URL)
+- [ ] Live browser E2E blocked in sandbox: backend CORS only allows published origins (client guard by design) — verify on the published/preview domain
+- [ ] Checkout/payments not implemented: paid tools unlock only with an existing purchase record; UI says payments are coming soon

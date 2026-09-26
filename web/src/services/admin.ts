@@ -109,7 +109,7 @@ export const adminService = {
   getSiteSettings() {
     return apiRequest<SiteSettings>("/admin/site-settings");
   },
-  putSiteSettings(values: Record<string, string>) {
+  putSiteSettings(values: Record<string, string | Record<string, string>>) {
     return apiRequest<SiteSettings>("/admin/site-settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -149,4 +149,86 @@ export const adminService = {
     const result = await apiRequest<UploadedMedia>("/media", { method: "POST", body: form });
     return { ...result, url: assetUrl(result.url) ?? result.url };
   },
+
+  // ── Categories & subcategories ─────────────────────────────────────────────
+  async listAdminCategories(): Promise<{
+    items: CategoryWithCountRaw[];
+    subcategories: Record<string, SubcategoryWithCountRaw[]>;
+  }> {
+    return apiRequest<{ items: CategoryWithCountRaw[]; subcategories: Record<string, SubcategoryWithCountRaw[]> }>(
+      "/admin/categories",
+    );
+  },
+
+  async createCategory(body: {
+    name: string; description?: string | undefined; icon?: string | undefined; icon_media_id?: string | undefined; is_hidden?: boolean | undefined;
+  }) {
+    return apiRequest<{ id: string }>("/admin/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  },
+
+  async updateCategory(id: string, body: {
+    name?: string | undefined; description?: string | undefined; icon?: string | undefined; icon_media_id?: string | null | undefined; is_hidden?: boolean | undefined;
+  }) {
+    await apiRequest(`/admin/categories/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  },
+
+  async deleteCategory(id: string) {
+    await apiRequest<{ ok: boolean }>(`/admin/categories/${id}`, { method: "DELETE" });
+  },
+
+  async listAdminSubcategories(categoryId: string): Promise<SubcategoryWithCountRaw[]> {
+    return apiRequest<SubcategoryWithCountRaw[]>(`/admin/categories/${categoryId}/subcategories`);
+  },
+
+  async createSubcategory(categoryId: string, body: { name: string; icon?: string | undefined; icon_media_id?: string | undefined }) {
+    return apiRequest<{ id: string }>(`/admin/categories/${categoryId}/subcategories`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  },
+
+  async updateSubcategory(id: string, body: { name?: string | undefined; icon?: string | undefined; icon_media_id?: string | null | undefined }) {
+    await apiRequest<{ ok: boolean }>(`/admin/subcategories/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  },
+
+  async deleteSubcategory(id: string) {
+    await apiRequest<{ ok: boolean }>(`/admin/subcategories/${id}`, { method: "DELETE" });
+  },
 };
+
+// ── Raw shapes shared with the public posts service ───────────────────────────
+export interface CategoryWithCountRaw {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  icon?: string | null;
+  icon_media_id?: string | null;
+  icon_url?: string | null;
+  is_hidden?: boolean | null;
+  post_count?: number | null;
+}
+
+export interface SubcategoryWithCountRaw {
+  id: string;
+  category_id: string;
+  name: string;
+  slug: string;
+  icon?: string | null;
+  icon_media_id?: string | null;
+  icon_url?: string | null;
+  post_count?: number | null;
+}

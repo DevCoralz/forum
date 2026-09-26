@@ -145,3 +145,29 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
     return response.json() as Promise<T>;
   }
 }
+
+/** Downloads a binary endpoint (tool files) with the same guard + auth headers. */
+export async function apiBlob(path: string): Promise<{ blob: Blob; filename: string | null }> {
+  if (!API_URL) throw new ApiError("VITE_API_URL is not configured", 503);
+  const versionedPath = `/api/v1${path.startsWith("/") ? path : `/${path}`}`;
+  const guardToken = await ensureClientToken().catch(() => null);
+  const token = getToken();
+  const response = await fetch(guardedUrl(versionedPath), {
+    credentials: "include",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(guardToken ? { "X-Client-Token": guardToken } : {}),
+    },
+  });
+  if (!response.ok) {
+    let message = `Download failed with status ${response.status}`;
+    try {
+      const body = (await response.json()) as { detail?: unknown };
+      if (typeof body?.detail === "string") message = body.detail;
+    } catch { /* non-JSON error body */ }
+    throw new ApiError(message, response.status);
+  }
+  const disposition = response.headers.get("Content-Disposition") ?? "";
+  const match = /filename="([^"]+)"/.exec(disposition);
+  return { blob: await response.blob(), filename: match?.[1] ?? null };
+}
