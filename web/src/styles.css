@@ -267,3 +267,94 @@
 .premium-blockade > svg { width: .9rem; flex: 0 0 auto; color: var(--primary); }
 .premium-blockade span { min-width: 0; }
 .premium-blockade a { margin-left: auto; }
+
+/* ── Crimson headings: every h1 and section header reads red ────────────────── */
+:root { --red-heading: oklch(0.62 0.205 29.4); }
+h1 { color: var(--red-heading); }
+.section-title { color: var(--red-heading); }
+.forum-masthead h1 span { color: var(--primary); }
+.forum-masthead h1 span.brand-red { color: var(--red-heading); }
+.brand-red { color: var(--red-heading); }
+
+/* I2P stamp: crimson on dark, glowing red edge */
+.brand-mark {
+  background: linear-gradient(145deg, color-mix(in oklab, var(--primary-strong) 60%, #000), color-mix(in oklab, var(--primary-strong) 85%, #000));
+  color: var(--red-heading);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--red-heading) 55%, transparent), 0 0 16px color-mix(in oklab, var(--red-heading) 35%, transparent);
+}
+
+/* ── Shimmer tags: admin-defined name + color, glowing sweep ────────────────── */
+.tag-shimmer {
+  position: relative;
+  flex: 0 0 auto;
+  padding: .22rem .5rem;
+  border: 1px solid color-mix(in oklab, var(--tag-color, #666) 45%, transparent);
+  border-radius: .25rem;
+  background: color-mix(in oklab, var(--tag-color, #666) 12%, transparent);
+  font-size: .64rem;
+  font-weight: 600;
+  color: var(--tag-color, #999);
+  text-shadow: 0 0 8px color-mix(in oklab, var(--tag-color, #666) 65%, transparent);
+  animation: tag-shimmer 2.6s ease-in-out infinite;
+  white-space: nowrap;
+}
+@keyframes tag-shimmer {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.5); }
+}
+
+/* ── Account status banners ─────────────────────────────────────────────────── */
+.status-banner { display: flex; align-items: center; justify-content: center; gap: .5rem; padding: .5rem 1rem; font-size: .74rem; }
+.status-banner-flag { background: color-mix(in oklab, var(--primary) 10%, var(--background)); color: var(--primary); border-bottom: 1px solid color-mix(in oklab, var(--primary) 30%, transparent); }
+.status-banner-suspend { background: color-mix(in oklab, var(--primary-strong) 25%, var(--background)); color: oklch(0.84 0.13 88); border-bottom: 1px solid color-mix(in oklab, var(--primary-strong) 50%, transparent); }
+
+/* ── Ad carousel ────────────────────────────────────────────────────────────── */
+.ad-carousel { margin-bottom: 1rem; }
+.ad-frame { position: relative; overflow: hidden; border: 1px solid var(--border); border-radius: .45rem; aspect-ratio: 21 / 8; background: var(--surface); }
+.ad-slide { position: absolute; inset: 0; opacity: 0; transition: opacity .5s ease; pointer-events: none; }
+.ad-slide[data-active="true"] { opacity: 1; pointer-events: auto; }
+.ad-slide img, .ad-slide video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ad-caption { position: absolute; inset-inline: 0; bottom: 0; display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .5rem .75rem; background: linear-gradient(to top, rgb(0 0 0 / 78%), transparent); font-size: .72rem; color: #fff; }
+.ad-visit { flex: 0 0 auto; display: inline-flex; align-items: center; gap: .3rem; padding: .25rem .6rem; border-radius: .25rem; background: var(--primary); color: oklch(0.12 0.014 261); font-weight: 600; text-decoration: none; }
+.ad-visit:hover { filter: brightness(1.1); }
+.ad-dots { display: flex; justify-content: center; gap: .4rem; margin-top: .5rem; }
+.ad-dots button { width: .55rem; height: .55rem; border-radius: 50%; background: color-mix(in oklab, var(--foreground) 25%, transparent); }
+.ad-dots button.active { background: var(--primary); }
+
+/* ── Admin center ───────────────────────────────────────────────────────────── */
+.admin-tabs { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: 1rem; }
+.admin-tabs button { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .9rem; border: 1px solid var(--border); border-radius: .35rem; background: var(--surface); font-size: .78rem; color: var(--muted-foreground); }
+.admin-tabs button[data-active="true"] { border-color: color-mix(in oklab, var(--red-heading) 60%, transparent); color: var(--red-heading); background: color-mix(in oklab, var(--red-heading) 10%, var(--surface)); }
+.admin-panel { border: 1px solid var(--border); border-radius: .45rem; background: color-mix(in oklab, var(--surface) 60%, transparent); padding: 1rem; }
+.admin-input { min-height: 2.1rem; border: 1px solid var(--border); border-radius: .35rem; background: var(--surface); padding: .35rem .6rem; font-size: .78rem; color: var(--foreground); }
+.admin-input::placeholder { color: var(--muted-foreground); }
+.admin-btn { display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; font-weight: 600; color: var(--primary); border-color: color-mix(in oklab, var(--primary) 40%, transparent); }
+.admin-btn:disabled { opacity: .5; cursor: not-allowed; }
+.admin-btn.danger, .admin-actions .danger { color: var(--red-heading); border-color: color-mix(in oklab, var(--red-heading) 40%, transparent); }
+.admin-color { min-width: 2.6rem; padding: .15rem; height: 2.1rem; }
+.admin-user-list { display: flex; flex-direction: column; }
+.admin-user-row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: .75rem; padding: .8rem 0; border-bottom: 1px solid color-mix(in oklab, var(--border) 60%, transparent); }
+.admin-actions { display: flex; flex-wrap: wrap; gap: .3rem; }
+.admin-actions button { display: inline-flex; align-items: center; gap: .3rem; padding: .28rem .5rem; border: 1px solid var(--border); border-radius: .3rem; background: var(--surface); font-size: .68rem; color: var(--muted-foreground); cursor: pointer; }
+.admin-actions button:hover { color: var(--foreground); border-color: color-mix(in oklab, var(--primary) 40%, transparent); }
+.role-chip { padding: .15rem .4rem; border-radius: .25rem; font-size: .62rem; text-transform: uppercase; letter-spacing: .06em; background: color-mix(in oklab, var(--foreground) 10%, transparent); color: var(--muted-foreground); }
+.role-chip.role-premium { background: color-mix(in oklab, var(--primary) 16%, transparent); color: var(--primary); }
+.role-chip.role-admin, .role-chip.role-super_admin { background: color-mix(in oklab, var(--red-heading) 16%, transparent); color: var(--red-heading); }
+.status-chip { padding: .15rem .4rem; border-radius: .25rem; font-size: .62rem; text-transform: uppercase; letter-spacing: .06em; }
+.status-chip.status-banned { background: color-mix(in oklab, var(--red-heading) 20%, transparent); color: var(--red-heading); }
+.status-chip.status-suspended { background: color-mix(in oklab, var(--primary-strong) 30%, transparent); color: oklch(0.84 0.13 88); }
+.status-chip.status-flagged { background: color-mix(in oklab, var(--primary) 14%, transparent); color: var(--primary); }
+.admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+.admin-grid label { display: flex; flex-direction: column; gap: .35rem; font-size: .72rem; color: var(--muted-foreground); }
+.admin-grid .admin-span2 { grid-column: span 2; }
+.admin-media .admin-media-preview { display: flex; align-items: center; gap: .6rem; }
+.admin-media-preview img { height: 2.4rem; width: auto; border-radius: .25rem; }
+.admin-tag-row { display: inline-flex; align-items: center; gap: .4rem; padding: .3rem .45rem; border: 1px solid var(--border); border-radius: .35rem; }
+.admin-tag-row .admin-actions button { border: 0; background: transparent; }
+.admin-coming { display: flex; gap: .7rem; padding: .8rem; border: 1px dashed color-mix(in oklab, var(--border) 90%, transparent); border-radius: .4rem; }
+.admin-menu-link { color: var(--red-heading) !important; font-weight: 600; }
+
+/* ── Maintenance screen ─────────────────────────────────────────────────────── */
+.maintenance-screen { display: grid; min-height: 100vh; place-content: center; justify-items: center; gap: 1rem; background: var(--background); color: var(--foreground); text-align: center; padding: 2rem; }
+.maintenance-screen h1 { font-family: var(--font-display); font-size: 1.6rem; }
+.maintenance-screen p { font-size: .85rem; color: var(--muted-foreground); }

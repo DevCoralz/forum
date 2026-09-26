@@ -39,12 +39,20 @@ from app.api.posts.posts import router as posts_router
 from app.api.posts.interactions import router as interactions_router
 from app.api.posts.manage import router as posts_manage_router      # DELETE /posts/{id}, GET /posts/categories/counts
 
+# ── Media (Telegram-backed uploads) ───────────────────────────────────────────
+from app.api.media import router as media_router
+
 # ── Chat & DMs ────────────────────────────────────────────────────────────────
 from app.api.chat.stream import router as chat_router
 from app.api.dm.threads import router as dm_router
 
+# ── Public site bootstrap ─────────────────────────────────────────────────────
+from app.api.site import router as public_site_router
+
 # ── Admin ─────────────────────────────────────────────────────────────────────
 from app.api.admin.tags import router as admin_tags_router
+from app.api.admin.users import router as admin_users_router
+from app.api.admin.site import router as admin_site_router
 
 BIN_DIR = Path(__file__).parent.parent / ".bin"
 
@@ -105,7 +113,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Coralz Forum API",
+    title="I2P Forum API",
     version="1.0.0",
     docs_url="/api/docs",
     redoc_url=None,
@@ -119,6 +127,31 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def maintenance_gate(request, call_next):
+    """Site mode = maintenance: everything 503s except admin surface, login and the
+    public bootstrap so the maintenance page can still render."""
+    path = request.url.path
+    if path.startswith("/api/v1/"):
+        from app.repositories.settings_repository import settings_repo
+
+        allowed = (
+            path.startswith("/api/v1/admin")
+            or path.startswith("/api/v1/auth/login")
+            or path.startswith("/api/v1/site")
+            or path.startswith("/api/v1/media/")
+            or path.startswith("/api/docs")
+        )
+        if not allowed and settings_repo.get_all().get("site_mode") == "maintenance":
+            from fastapi.responses import JSONResponse
+
+            return JSONResponse(
+                {"detail": "Site is in maintenance mode. Check back soon."},
+                status_code=503,
+            )
+    return await call_next(request)
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 app.include_router(register_router,  prefix="/api/v1/auth", tags=["auth"])
@@ -146,8 +179,16 @@ app.include_router(interactions_router,  prefix="/api/v1/posts",  tags=["posts"]
 app.include_router(chat_router, prefix="/api/v1", tags=["chat"])
 app.include_router(dm_router,   prefix="/api/v1", tags=["dm"])
 
+# ── Media ─────────────────────────────────────────────────────────────────────
+app.include_router(media_router, prefix="/api/v1", tags=["media"])
+
+# ── Public site bootstrap ─────────────────────────────────────────────────────
+app.include_router(public_site_router, prefix="/api/v1", tags=["site"])
+
 # ── Admin ─────────────────────────────────────────────────────────────────────
 app.include_router(admin_tags_router, prefix="/api/v1/admin", tags=["admin"])
+app.include_router(admin_users_router, prefix="/api/v1/admin", tags=["admin"])
+app.include_router(admin_site_router, prefix="/api/v1/admin", tags=["admin"])
 
 # ── Static files ──────────────────────────────────────────────────────────────
 os.makedirs(UPLOAD_DIR, exist_ok=True)

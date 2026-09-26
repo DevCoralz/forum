@@ -65,6 +65,11 @@ class MeResponse(BaseModel):
     about_me: str | None = None
     avatar_url: str | None = None
     created_at: datetime
+    is_suspended: bool = False
+    suspended_until: datetime | None = None
+    suspend_reason: str | None = None
+    is_flagged: bool = False
+    flag_reason: str | None = None
 
     model_config = {"from_attributes": True}
 

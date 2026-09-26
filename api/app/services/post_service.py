@@ -42,36 +42,54 @@ def _lock_reason(post: dict, viewer_role: Optional[str], viewer_id: Optional[str
     return None if (liked and commented) else "interact"
 
 
+def _ensure_not_suspended(user_id: Optional[str]) -> None:
+    if not user_id:
+        return
+    u = user_repo.find_by_id(user_id)
+    if u and u["is_suspended"]:
+        until = u.get("suspended_until")
+        from datetime import datetime
+        if until is None or datetime.now() < until:
+            raise forbidden("Your account is suspended")
+
+
+def _threads_category_id() -> str:
+    from app.core.database import get_db
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id FROM post_categories WHERE slug='threads'")
+            row = cur.fetchone()
+    if not row:
+        raise bad_request("Threads category missing")
+    return row["id"]
+
+
 def _author_out(user_row: dict, labels_by_user: dict[str, list[str]]) -> AuthorOut:
+    badges = label_repo.badges_for_users([user_row["id"]]).get(user_row["id"], [])
     return AuthorOut(
         id=user_row["id"],
         username=user_row["username"],
         avatar_url=user_row.get("avatar_url"),
         is_verified_tick=bool(user_row.get("is_verified_tick")),
         labels=labels_by_user.get(user_row["id"], []),
+        badges=badges,
     )
 
 
 class PostService:
     def create(self, author_id: str, author_role: str, body: CreatePostRequest) -> dict:
         if author_role not in CAN_POST_ROLES:
-            raise forbidden("Free accounts can't publish posts yet — upgrade to post")
-
-        category = category_repo.find(body.category_id)
-        if not category:
-            raise bad_request("Unknown category")
-
-        if body.subcategory_id:
-            sub = category_repo.find_subcategory(body.subcategory_id)
-            if not sub or sub["category_id"] != body.category_id:
-                raise bad_request("Subcategory does not belong to that category")
+            raise forbidden("Upgrade Membership to create threads")
+        _ensure_not_suspended(author_id)
+        # Every thread goes into the Threads category for now.
+        threads_id = _threads_category_id()
 
         return post_repo.create(
             author_id=author_id,
             title=body.title,
             content=body.content,
-            category_id=body.category_id,
-            subcategory_id=body.subcategory_id,
+            category_id=threads_id,
+            subcategory_id=None,
             post_type=body.post_type,
             tags=body.tags,
         )
@@ -106,7 +124,7 @@ class PostService:
                       limit: int) -> list[PostSummary]:
         post = post_repo.find(post_id)
         if not post:
-            raise not_found("Post not found")
+            raise not_found("Thread not found")
         similar = post_repo.list_similar(post_id, post["category_id"], limit)
         return self._hydrate_summaries(similar, viewer_role, viewer_id)
 
@@ -118,9 +136,10 @@ class PostService:
         return [self._to_summary(p, viewer_role, viewer_id, labels_by_user, authors_by_id) for p in posts]
 
     def get_detail(self, post_id: str, viewer_role: Optional[str], viewer_id: Optional[str]) -> PostDetail:
+        _ensure_not_suspended(viewer_id)
         post = post_repo.find(post_id)
         if not post:
-            raise not_found("Post not found")
+            raise not_found("Thread not found")
 
         author = user_repo.find_by_id(post["author_id"])
         labels_by_user = label_repo.list_for_users([post["author_id"]])
@@ -150,9 +169,10 @@ class PostService:
         )
 
     def like(self, post_id: str, user_id: str) -> dict:
+        _ensure_not_suspended(user_id)
         post = post_repo.find(post_id)
         if not post:
-            raise not_found("Post not found")
+            raise not_found("Thread not found")
         if post["post_type"] == "premium":
             user = user_repo.find_by_id(user_id)
             if not user or user["role"] not in PREMIUM_ACCESS_ROLES:
@@ -167,9 +187,10 @@ class PostService:
         return {"liked": liked, "like_count": post_repo.like_count(post_id)}
 
     def add_comment(self, post_id: str, user_id: str, body: CommentCreate) -> CommentOut:
+        _ensure_not_suspended(user_id)
         post = post_repo.find(post_id)
         if not post:
-            raise not_found("Post not found")
+            raise not_found("Thread not found")
         if post["post_type"] == "premium":
             user = user_repo.find_by_id(user_id)
             if not user or user["role"] not in PREMIUM_ACCESS_ROLES:
@@ -189,7 +210,7 @@ class PostService:
     def list_comments(self, post_id: str, limit: int, offset: int) -> list[CommentOut]:
         post = post_repo.find(post_id)
         if not post:
-            raise not_found("Post not found")
+            raise not_found("Thread not found")
 
         comments = comment_repo.list_for_post(post_id, limit, offset)
         author_ids = list({c["author_id"] for c in comments})

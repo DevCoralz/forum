@@ -45,10 +45,13 @@ def decode_access_token(token: str) -> Optional[dict]:
 class CurrentUser:
     """Lightweight identity extracted from a verified, non-revoked session."""
 
-    def __init__(self, user_id: str, role: str, session_id: str):
+    def __init__(self, user_id: str, role: str, session_id: str,
+                 is_suspended: bool = False, is_flagged: bool = False):
         self.id = user_id
         self.role = role
         self.session_id = session_id
+        self.is_suspended = is_suspended
+        self.is_flagged = is_flagged
 
 
 def get_current_user(request: Request) -> CurrentUser:
@@ -70,8 +73,25 @@ def get_current_user(request: Request) -> CurrentUser:
     if not sid or not session_repo.is_active(sid):
         raise unauthorized("Session expired or revoked")
 
+    # Always read the live record so role changes, bans and suspensions
+    # apply immediately, even to sessions issued before the change.
+    from app.repositories.user_repository import user_repo
+    record = user_repo.find_by_id(payload["sub"])
+    if not record:
+        raise unauthorized()
+    if record["is_banned"]:
+        session_repo.revoke(sid, record["id"])
+        from app.core.exceptions import forbidden
+        raise forbidden("This account has been banned")
+    suspended = bool(record["is_suspended"])
+    until = record.get("suspended_until")
+    if suspended and until is not None and datetime.now() >= until:
+        user_repo.clear_suspension(record["id"])
+        suspended = False
+
     session_repo.touch(sid)
-    return CurrentUser(user_id=payload["sub"], role=payload["role"], session_id=sid)
+    return CurrentUser(user_id=record["id"], role=record["role"], session_id=sid,
+                       is_suspended=suspended, is_flagged=bool(record.get("is_flagged")))
 
 
 def get_optional_user(request: Request) -> Optional[CurrentUser]:
@@ -79,6 +99,13 @@ def get_optional_user(request: Request) -> Optional[CurrentUser]:
         return get_current_user(request)
     except Exception:
         return None
+
+
+def require_active(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    if user.is_suspended:
+        from app.core.exceptions import forbidden
+        raise forbidden("Your account is suspended")
+    return user
 
 
 def require_roles(*roles: str):

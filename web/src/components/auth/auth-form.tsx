@@ -54,7 +54,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center pb-16">
         <h1 className="font-display text-3xl font-semibold text-foreground">{isSignup ? "Create an I2P Forum account" : "Log in"}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          {isSignup ? "Create an account to view and download full content." : "Log in to unlock posts and items."}
+          {isSignup ? "Create an account to view and download full content." : "Log in to unlock threads and items."}
         </p>
         <form onSubmit={onSubmit} className="mt-8 space-y-4" noValidate>
           {!isSignup && (

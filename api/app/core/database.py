@@ -386,6 +386,54 @@ _TABLES = [
         updated_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """,
+    # ── Admin-managed tag definitions (shimmer badges) ─────────────────────
+    """
+    CREATE TABLE IF NOT EXISTS tag_definitions (
+        id         VARCHAR(36)  PRIMARY KEY,
+        name       VARCHAR(60)  NOT NULL UNIQUE,
+        color      VARCHAR(20)  NOT NULL DEFAULT '#FFC928',
+        created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """,
+    # ── Media stored in a Telegram channel (metadata only here) ────────────
+    """
+    CREATE TABLE IF NOT EXISTS media (
+        id           VARCHAR(36)  PRIMARY KEY,
+        tg_chat_id   VARCHAR(40)  NOT NULL,
+        tg_message_id BIGINT      NOT NULL,
+        filename     VARCHAR(255) NOT NULL,
+        mime_type    VARCHAR(100) NOT NULL,
+        size_bytes   BIGINT       NOT NULL,
+        kind         VARCHAR(20)  NOT NULL,
+        uploaded_by  VARCHAR(36)  NULL,
+        created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """,
+    # ── Homepage ad slides ─────────────────────────────────────────────────
+    """
+    CREATE TABLE IF NOT EXISTS ads (
+        id          VARCHAR(36)  PRIMARY KEY,
+        media_id    VARCHAR(36)  NULL,
+        media_type  VARCHAR(10)  NOT NULL DEFAULT 'image',
+        description VARCHAR(500) NOT NULL DEFAULT '',
+        url         VARCHAR(1000) NULL,
+        sort_order  INT          NOT NULL DEFAULT 0,
+        is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
+        created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """,
+    # ── Admin audit log ────────────────────────────────────────────────────
+    """
+    CREATE TABLE IF NOT EXISTS audit_log (
+        id         VARCHAR(36)  PRIMARY KEY,
+        actor_id   VARCHAR(36)  NOT NULL,
+        action     VARCHAR(60)  NOT NULL,
+        target_id  VARCHAR(36)  NULL,
+        detail     TEXT         NULL,
+        created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_audit_created (created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """,
 ]
 
 # ── Migrations for existing DBs ───────────────────────────────────────────────
@@ -402,6 +450,7 @@ _RENAMES = [
 ]
 
 _SEED_CATEGORIES = [
+    ("threads",         "Threads",          "All threads"),
     ("leaks",           "Leaks",            "Leaks"),
     ("methods",         "Methods",          "Methods"),
     ("premium",         "Premium",          "ELITES"),
@@ -415,8 +464,27 @@ _SEED_CATEGORIES = [
 _DEFAULT_SETTINGS = [
     ("registration_open", "true"),
     ("maintenance_mode",  "false"),
-    ("site_name",         "Forum"),
+    ("site_name",         "I2P Forum"),
+    ("site_currency",     "USD"),
+    ("site_footer",       "© 2026 I2P Forum"),
+    ("site_description",  "I2P Forum threads and member discussions."),
+    ("site_keywords",     "i2p, forum, threads"),
+    ("site_mode",         "production"),
+    ("logo_media_id",     ""),
+    ("favicon_media_id",  ""),
+    ("og_image_media_id", ""),
+    ("og_title",          "I2P Forum"),
+    ("og_description",    "I2P Forum threads and member discussions."),
 ]
+
+def _add_column(cur, table: str, column: str, ddl: str) -> None:
+    cur.execute(
+        "SELECT COUNT(*) AS n FROM information_schema.columns "
+        "WHERE table_schema=DATABASE() AND table_name=%s AND column_name=%s",
+        (table, column),
+    )
+    if not cur.fetchone()["n"]:
+        cur.execute(f"ALTER TABLE `{table}` ADD COLUMN {ddl}")
 
 
 def init_db() -> None:
@@ -473,6 +541,23 @@ def init_db() -> None:
                         "INSERT IGNORE INTO post_categories (id, name, slug, description, sort_order) VALUES (%s,%s,%s,%s,%s)",
                         (new_id(), name, slug, desc, i),
                     )
+
+            # Threads category always exists; every thread lives there.
+            cur.execute("SELECT id FROM post_categories WHERE slug='threads'")
+            row = cur.fetchone()
+            if not row:
+                cur.execute(
+                    "INSERT INTO post_categories (id, name, slug, description, sort_order) VALUES (%s,'Threads','threads','All threads',-1)",
+                    (new_id(),),
+                )
+                cur.execute("SELECT id FROM post_categories WHERE slug='threads'")
+                row = cur.fetchone()
+            cur.execute("UPDATE posts SET category_id=%s, subcategory_id=NULL WHERE category_id<>%s", (row["id"], row["id"]))
+
+            # Moderation + tag columns
+            _add_column(cur, "users", "is_flagged", "is_flagged BOOLEAN NOT NULL DEFAULT FALSE")
+            _add_column(cur, "users", "flag_reason", "flag_reason VARCHAR(500) NULL")
+            _add_column(cur, "user_labels", "tag_id", "tag_id VARCHAR(36) NULL")
 
             # Seed site settings
             for key, val in _DEFAULT_SETTINGS:

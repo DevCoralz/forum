@@ -12,6 +12,11 @@ export interface AuthUser {
   about_me?: string | null;
   avatar_url?: string | null;
   created_at?: string;
+  is_suspended?: boolean;
+  suspended_until?: string | null;
+  suspend_reason?: string | null;
+  is_flagged?: boolean;
+  flag_reason?: string | null;
 }
 
 /** Premium access is anything above free; admins also see premium content. */

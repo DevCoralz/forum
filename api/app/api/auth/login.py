@@ -53,6 +53,11 @@ def me(user: CurrentUser = Depends(get_current_user)):
         about_me=record.get("about_me"),
         avatar_url=record.get("avatar_url"),
         created_at=record["created_at"],
+        is_suspended=user.is_suspended,
+        suspended_until=record.get("suspended_until") if user.is_suspended else None,
+        suspend_reason=record.get("suspend_reason") if user.is_suspended else None,
+        is_flagged=bool(record.get("is_flagged")),
+        flag_reason=record.get("flag_reason"),
     )
 
 

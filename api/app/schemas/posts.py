@@ -30,12 +30,13 @@ class AuthorOut(BaseModel):
     avatar_url: Optional[str] = None
     is_verified_tick: bool = False
     labels: list[str] = []
+    badges: list[dict] = []
 
 
 class CreatePostRequest(BaseModel):
     title: str
     content: str
-    category_id: str
+    category_id: Optional[str] = None  # ignored; threads go to "Threads"
     subcategory_id: Optional[str] = None
     post_type: str = "free"  # "free" | "premium" — this is the audience gate
     tags: Optional[list[str]] = None

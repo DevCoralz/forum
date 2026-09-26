@@ -38,7 +38,7 @@ const schema = z.object({
   audience: z.enum(["only_me", "public", "premium"]),
   title: z.string().trim().min(3, "Title needs at least 3 characters").max(TITLE_MAX),
   titleColor: z.enum(["default", "blue", "violet", "cyan", "emerald", "amber", "rose"]),
-  body: z.string().refine((v) => v.trim().length >= 10, "Post content needs at least 10 characters").refine((v) => v.length <= BODY_MAX, "Post is too long"),
+  body: z.string().refine((v) => v.trim().length >= 10, "Thread content needs at least 10 characters").refine((v) => v.length <= BODY_MAX, "Thread is too long"),
   categoryId: z.string().min(1, "Choose a category"),
   subcategory: z.string().trim().max(40).optional(),
 });
@@ -171,11 +171,11 @@ export function WritePostPage() {
       const created = await postsService.createPost(subcategory ? { ...rest, subcategory } : rest);
       localStorage.removeItem(DRAFT_KEY);
       setDraft(emptyDraft);
-      toast.success("Post published");
-      navigate({ to: "/post/$postId", params: { postId: created.id } });
+      toast.success("Thread published");
+      navigate({ to: "/thread/$threadId", params: { threadId: created.id } });
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) toast.error("Log in before publishing.");
-      else if (err instanceof ApiError && err.status === 403) toast.error("Your account isn't allowed to post yet.");
+      else if (err instanceof ApiError && err.status === 403) toast.error("Your account isn't allowed to publish threads yet.");
       else toast.error("Couldn't publish. Try again.");
     } finally {
       setPublishing(false);
@@ -193,12 +193,12 @@ export function WritePostPage() {
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-foreground">Write a post</h1>
+          <h1 className="font-display text-2xl font-semibold text-foreground">Write a thread</h1>
           <p className="mt-1 text-xs text-muted-foreground">{savedAt ? `Draft saved on this device · ${savedAt}` : "Drafts save automatically on this device"}</p>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="inline-flex h-9 items-center gap-2 rounded-full border border-primary/40 bg-surface/50 px-4 text-sm text-foreground hover:bg-primary/10" aria-label="Who can see this post">
+            <button className="inline-flex h-9 items-center gap-2 rounded-full border border-primary/40 bg-surface/50 px-4 text-sm text-foreground hover:bg-primary/10" aria-label="Who can see this thread">
               <audience.icon className="size-4 text-primary" />{audience.label}<ChevronDown className="size-3.5 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
@@ -222,7 +222,7 @@ export function WritePostPage() {
             <input
               id="post-title" ref={titleRef} value={draft.title} maxLength={TITLE_MAX}
               onChange={(e) => set("title", e.target.value)} onFocus={() => setFocused("title")} onKeyDown={onKey("title")}
-              placeholder="What's this post about?"
+              placeholder="What's this thread about?"
               className={`min-w-0 flex-1 bg-transparent py-3 text-lg font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground ${color.className}`}
             />
             <DropdownMenu>
@@ -246,7 +246,7 @@ export function WritePostPage() {
 
         {/* Body */}
         <section>
-          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Post content</span>
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Thread content</span>
 
           <div className="mt-2 rounded-2xl border border-border bg-surface/30 focus-within:border-primary/60">
             <div className="scrollbar-none flex items-center gap-0.5 overflow-x-auto border-b border-border px-2 py-1.5" role="toolbar" aria-label="Text formatting">
@@ -266,7 +266,7 @@ export function WritePostPage() {
                 <textarea
                   ref={bodyRef} value={draft.body} maxLength={BODY_MAX}
                   onChange={(e) => set("body", e.target.value)} onFocus={() => setFocused("body")} onKeyDown={onKey("body")}
-                  placeholder={"Write your post. Blank lines are preserved.\n\nSelect text and use the toolbar, or Ctrl+B / Ctrl+I / Ctrl+U."}
+                  placeholder={"Write your thread. Blank lines are preserved.\n\nSelect text and use the toolbar, or Ctrl+B / Ctrl+I / Ctrl+U."}
                   className="block min-h-72 w-full resize-y bg-transparent px-4 py-4 font-mono text-sm leading-7 text-foreground outline-none placeholder:font-sans placeholder:text-muted-foreground"
                 />
               </div>
@@ -307,10 +307,10 @@ export function WritePostPage() {
           <section className="border-t border-border pt-5">
             <p className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground"><Sparkles className="size-3.5 text-primary" />How it will look in the feed</p>
             <div className={`mt-2 font-semibold ${color.className}`}>
-              {draft.title ? <FormattedText text={draft.title} /> : "Untitled post"}
+              {draft.title ? <FormattedText text={draft.title} /> : "Untitled thread"}
             </div>
             <div className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-              {draft.body ? <FormattedText text={draft.body} /> : "Post content preview"}
+              {draft.body ? <FormattedText text={draft.body} /> : "Thread content preview"}
             </div>
             <p className="mt-2 text-xs text-muted-foreground">{category?.name ?? "No category"}{draft.subcategory ? ` · ${draft.subcategory}` : ""} · {audience.label}</p>
           </section>

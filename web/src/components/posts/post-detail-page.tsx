@@ -60,7 +60,7 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
       void queryClient.invalidateQueries({ queryKey: ["posts"] });
       void hardRefresh();
     },
-    onError: (error) => toast.error(error instanceof ApiError && error.status === 401 ? "Log in to like posts." : "Couldn't save your like. Try again."),
+    onError: (error) => toast.error(error instanceof ApiError && error.status === 401 ? "Log in to like threads." : "Couldn't save your like. Try again."),
   });
 
   const commentMutation = useMutation({
@@ -99,7 +99,7 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
           <span className="category-tag">{post.category}{post.subcategory ? ` · ${post.subcategory}` : ""}</span>
           {isLockedPost && <span className="premium-badge"><LockKeyhole /> Premium</span>}
         </div>
-        <h1 className="mt-3 font-display text-xl font-semibold leading-snug text-foreground sm:text-2xl">{post.title}</h1>
+        <h1 className="mt-3 font-display text-xl font-semibold leading-snug sm:text-2xl" style={{ color: "var(--red-heading)" }}>{post.title}</h1>
 
         <div className="post-body">
           {unlocked ? (
@@ -107,7 +107,7 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
           ) : (
             <div className="post-lock">
               <LockKeyhole className="size-6 text-primary" />
-              <strong>This post is locked</strong>
+              <strong>This thread is locked</strong>
               {post.lockReason === "premium" ? (
                 <>
                   <p>Upgrade To Premium to view Premium Posts</p>
@@ -115,7 +115,7 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
                 </>
               ) : post.lockReason === "interact" ? (
                 <>
-                  <p>Like and comment to unlock this post.</p>
+                  <p>Like and comment to unlock this thread.</p>
                   <ul className="flex gap-4 text-xs text-muted-foreground">
                     <li className={liked ? "text-primary" : ""}><Heart className="mr-1 inline size-3.5" />{liked ? "Liked" : "Like it"}</li>
                     <li className={post.commentedByViewer ? "text-primary" : ""}><MessageCircle className="mr-1 inline size-3.5" />{post.commentedByViewer ? "Commented" : "Leave a comment"}</li>
@@ -124,7 +124,7 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
                 </>
               ) : (
                 <>
-                  <p>Log in to read this post.</p>
+                  <p>Log in to read this thread.</p>
                   <Button asChild variant="coralz" size="sm"><a href="/login">Log in</a></Button>
                 </>
               )}
@@ -173,9 +173,9 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
       </section>
 
       <section className="mt-12">
-        <h2 className="section-title mb-4">Similar posts</h2>
+        <h2 className="section-title mb-4">Similar threads</h2>
         {similar.length === 0 ? (
-          <p className="border-y border-border py-8 text-center text-sm text-muted-foreground">No post</p>
+          <p className="border-y border-border py-8 text-center text-sm text-muted-foreground">No thread</p>
         ) : (
           <>
             <div className={`post-stream similar-list ${expanded ? "is-expanded" : ""}`}>

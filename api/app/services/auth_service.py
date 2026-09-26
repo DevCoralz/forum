@@ -84,11 +84,11 @@ class AuthService:
         if user["is_banned"]:
             raise forbidden("This account has been banned")
 
+        # Suspended members can still sign in; they are blocked from threads.
         if user["is_suspended"]:
             until = user.get("suspended_until")
-            if until is None or datetime.now() < until:
-                raise forbidden("This account is suspended")
-            user_repo.clear_suspension(user["id"])
+            if until is not None and datetime.now() >= until:
+                user_repo.clear_suspension(user["id"])
 
         _clear(ip_key, user_key)
         user_repo.update_last_login(user["id"])

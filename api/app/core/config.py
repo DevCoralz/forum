@@ -78,3 +78,14 @@ ALLOWED_AVATAR_TYPES: set[str] = {"image/jpeg", "image/png", "image/webp", "imag
 
 # Chat image uploads
 CHAT_UPLOAD_DIR: str = os.getenv("CHAT_UPLOAD_DIR", "uploads/chat")
+
+# Telegram media storage (user session => 2 GB uploads). Server-side only.
+TG_API_ID: int = int(os.environ.get("TG_API_ID", "0") or 0)
+TG_API_HASH: str = os.environ.get("TG_API_HASH", "")
+TG_SESSION_STRING: str = os.environ.get("TG_SESSION_STRING", "")
+TG_CHANNEL_ID: str = os.environ.get("TG_CHANNEL_ID", "")
+MAX_MEDIA_BYTES: int = 2000 * 1024 * 1024  # Telegram user-session limit
+ALLOWED_MEDIA_TYPES: set[str] = {
+    "image/jpeg", "image/png", "image/webp", "image/gif", "image/x-icon",
+    "image/vnd.microsoft.icon", "video/mp4", "video/webm",
+}

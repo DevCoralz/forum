@@ -16,6 +16,7 @@ class PublicProfile(BaseModel):
     avatar_url: Optional[str] = None
     is_verified_tick: bool
     labels: list[str] = []
+    badges: list[dict] = []
     socials: list[SocialLink] = []
     follower_count: int
     following_count: int

@@ -23,6 +23,7 @@ export interface RawAuthor {
   avatar_url?: string | null;
   is_verified_tick?: boolean;
   labels?: string[] | null;
+  badges?: { name: string; color: string }[] | null;
   role?: string | null;
   tier?: string | null;
 }
@@ -213,6 +214,7 @@ export function toAuthor(raw: RawAuthor): AuthorIdentity {
     tier: tierOf(role),
     roles: role === "admin" || role === "super_admin" ? [role === "admin" ? "admin" : "super_admin"] : ["member"],
     labels: raw.labels ?? [],
+    badges: raw.badges ?? [],
   };
   const avatar = assetUrl(raw.avatar_url);
   return avatar ? { ...author, avatarUrl: avatar } : author;

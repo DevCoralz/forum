@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -17,10 +18,16 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as WriteRouteImport } from './routes/write'
 import { Route as PostPostIdRouteImport } from './routes/post.$postId'
 import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
+import { Route as ThreadThreadIdRouteImport } from './routes/thread.$threadId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -58,9 +65,15 @@ const ProfileUsernameRoute = ProfileUsernameRouteImport.update({
   path: '/profile/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ThreadThreadIdRoute = ThreadThreadIdRouteImport.update({
+  id: '/thread/$threadId',
+  path: '/thread/$threadId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
   '/messages': typeof MessagesRoute
   '/settings': typeof SettingsRoute
@@ -68,9 +81,11 @@ export interface FileRoutesByFullPath {
   '/write': typeof WriteRoute
   '/post/$postId': typeof PostPostIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
+  '/thread/$threadId': typeof ThreadThreadIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
   '/messages': typeof MessagesRoute
   '/settings': typeof SettingsRoute
@@ -78,10 +93,12 @@ export interface FileRoutesByTo {
   '/write': typeof WriteRoute
   '/post/$postId': typeof PostPostIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
+  '/thread/$threadId': typeof ThreadThreadIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
   '/messages': typeof MessagesRoute
   '/settings': typeof SettingsRoute
@@ -89,11 +106,13 @@ export interface FileRoutesById {
   '/write': typeof WriteRoute
   '/post/$postId': typeof PostPostIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
+  '/thread/$threadId': typeof ThreadThreadIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/login'
     | '/messages'
     | '/settings'
@@ -101,9 +120,11 @@ export interface FileRouteTypes {
     | '/write'
     | '/post/$postId'
     | '/profile/$username'
+    | '/thread/$threadId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/login'
     | '/messages'
     | '/settings'
@@ -111,9 +132,11 @@ export interface FileRouteTypes {
     | '/write'
     | '/post/$postId'
     | '/profile/$username'
+    | '/thread/$threadId'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/login'
     | '/messages'
     | '/settings'
@@ -121,10 +144,12 @@ export interface FileRouteTypes {
     | '/write'
     | '/post/$postId'
     | '/profile/$username'
+    | '/thread/$threadId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   LoginRoute: typeof LoginRoute
   MessagesRoute: typeof MessagesRoute
   SettingsRoute: typeof SettingsRoute
@@ -132,6 +157,7 @@ export interface RootRouteChildren {
   WriteRoute: typeof WriteRoute
   PostPostIdRoute: typeof PostPostIdRoute
   ProfileUsernameRoute: typeof ProfileUsernameRoute
+  ThreadThreadIdRoute: typeof ThreadThreadIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -141,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -192,11 +225,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileUsernameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/thread/$threadId': {
+      id: '/thread/$threadId'
+      path: '/thread/$threadId'
+      fullPath: '/thread/$threadId'
+      preLoaderRoute: typeof ThreadThreadIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   LoginRoute: LoginRoute,
   MessagesRoute: MessagesRoute,
   SettingsRoute: SettingsRoute,
@@ -204,6 +245,7 @@ const rootRouteChildren: RootRouteChildren = {
   WriteRoute: WriteRoute,
   PostPostIdRoute: PostPostIdRoute,
   ProfileUsernameRoute: ProfileUsernameRoute,
+  ThreadThreadIdRoute: ThreadThreadIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

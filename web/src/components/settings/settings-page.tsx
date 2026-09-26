@@ -157,7 +157,7 @@ function ProfileSettings() {
 
   return (
     <form onSubmit={submit}>
-      <SectionHeading title="Profile" description="Choose how your identity appears across posts and conversations." />
+      <SectionHeading title="Profile" description="Choose how your identity appears across threads and conversations." />
       <div className="settings-section mt-5">
         <div className="grid gap-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
           <div className="profile-avatar size-20 text-base">
@@ -296,8 +296,8 @@ function PrivacySettings() {
         <label className="settings-field"><Label>Profile visibility</Label><Select value={privacy.profileVisibility} onValueChange={(value: "public" | "premium") => setPrivacy((current) => current && ({ ...current, profileVisibility: value }))}><SelectTrigger className="settings-input max-w-sm"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="public">Public</SelectItem><SelectItem value="premium">Premium members and admins</SelectItem></SelectContent></Select><span className="text-[.68rem] text-muted-foreground">Free members remain public. Premium members can restrict their profile.</span></label>
       </div>
       <div className="settings-section">
-        <PrivacyRow icon={MessageCircle} title="Comments on my posts" description="Allow members with access to reply to your posts." checked={privacy.allowComments} onCheckedChange={(checked) => setPrivacy((current) => current && ({ ...current, allowComments: checked }))} />
-        <PrivacyRow icon={Bell} title="Mentions" description="Allow members to mention you in posts and comments." checked={privacy.allowMentions} onCheckedChange={(checked) => setPrivacy((current) => current && ({ ...current, allowMentions: checked }))} />
+        <PrivacyRow icon={MessageCircle} title="Comments on my threads" description="Allow members with access to reply to your threads." checked={privacy.allowComments} onCheckedChange={(checked) => setPrivacy((current) => current && ({ ...current, allowComments: checked }))} />
+        <PrivacyRow icon={Bell} title="Mentions" description="Allow members to mention you in threads and comments." checked={privacy.allowMentions} onCheckedChange={(checked) => setPrivacy((current) => current && ({ ...current, allowMentions: checked }))} />
         <PrivacyRow icon={UsersRound} title="Direct messages" description="Allow private messages from community members." checked={privacy.allowDirectMessages} onCheckedChange={(checked) => setPrivacy((current) => current && ({ ...current, allowDirectMessages: checked }))} />
       </div>
       <div className="settings-section"><div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4"><div><h3 className="text-sm font-medium text-foreground">Blocked accounts</h3><p className="mt-1 text-xs text-muted-foreground">You have not blocked any accounts.</p></div><Button variant="coralzOutline" size="sm">Manage</Button></div></div>
@@ -323,14 +323,14 @@ function SubscriptionSettings() {
       <SectionHeading title="Subscription" description="Review the premium access assigned to your account." />
       <div className="settings-section mt-5">
         <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-          <div className="flex min-w-0 gap-4"><span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary/10 text-primary"><Crown className="size-5" /></span><div><div className="flex flex-wrap items-center gap-2"><h3 className="font-display text-base font-semibold text-foreground">{isPremium ? "Premium member" : "Free member"}</h3><span className="premium-badge"><Check /> {subscription?.status === "active" ? "Active" : "Inactive"}</span></div><p className="mt-2 max-w-xl text-xs leading-5 text-muted-foreground">Premium posts, protected resources, publishing access when authorized, and additional privacy controls.</p></div></div>
+          <div className="flex min-w-0 gap-4"><span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary/10 text-primary"><Crown className="size-5" /></span><div><div className="flex flex-wrap items-center gap-2"><h3 className="font-display text-base font-semibold text-foreground">{isPremium ? "Premium member" : "Free member"}</h3><span className="premium-badge"><Check /> {subscription?.status === "active" ? "Active" : "Inactive"}</span></div><p className="mt-2 max-w-xl text-xs leading-5 text-muted-foreground">Premium threads, protected resources, publishing access when authorized, and additional privacy controls.</p></div></div>
           {subscription?.renewsAt && <span className="text-xs text-muted-foreground">Renews {subscription.renewsAt}</span>}
         </div>
       </div>
       <div className="settings-section">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4"><div><p className="text-sm font-medium text-foreground">Access management</p><p className="mt-1 text-xs text-muted-foreground">Premium status is managed by I2P Forum administrators.</p></div><MonitorSmartphone className="size-5 text-primary" /></div>
       </div>
-      <div className="mt-5 border-l-2 border-primary/50 bg-primary/5 px-4 py-3 text-xs leading-5 text-muted-foreground">There are no prices on individual posts. Your account access determines which posts you can open.</div>
+      <div className="mt-5 border-l-2 border-primary/50 bg-primary/5 px-4 py-3 text-xs leading-5 text-muted-foreground">There are no prices on individual threads. Your account access determines which posts you can open.</div>
     </div>
   );
 }

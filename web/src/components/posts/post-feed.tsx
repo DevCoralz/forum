@@ -47,7 +47,7 @@ export function PostRow({ post }: { post: PostSummary }) {
           {/* Title is the only thing lists ever show. Plain anchor on purpose: tapping it
               does a real browser navigation so the detail page loads fresh. */}
           <h3 className="min-w-0 text-sm font-semibold text-foreground sm:text-[.94rem]">
-            <a className="post-title-link" href={`/post/${post.id}`}>{post.title}</a>
+            <a className="post-title-link" href={`/thread/${post.id}`}>{post.title}</a>
           </h3>
           {post.access === "premium" && <span className="premium-badge"><LockKeyhole /> Premium</span>}
         </div>
@@ -72,8 +72,8 @@ export function PostFeed({ posts, isLoading = false }: { posts: PostSummary[]; i
   return (
     <section id="latest" className="mx-auto max-w-6xl px-4 pb-14 sm:px-6 lg:px-8">
       <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
-        <h2 className="section-title">Latest Posts</h2>
-        <div className="feed-tabs" aria-label="Filter posts">
+        <h2 className="section-title">Latest Threads</h2>
+        <div className="feed-tabs" aria-label="Filter threads">
           {(["all", "free", "premium"] as FeedFilter[]).map((value) => (
             <button key={value} className={filter === value ? "active" : ""} onClick={() => setFilter(value)}>
               {value === "all" ? "All" : value === "free" ? "Free" : "Premium"}
@@ -85,7 +85,7 @@ export function PostFeed({ posts, isLoading = false }: { posts: PostSummary[]; i
       {isLoading ? (
         <LoadingSpinner />
       ) : visible.length === 0 ? (
-        <p className="border-y border-border py-10 text-center text-sm text-muted-foreground">No post</p>
+        <p className="border-y border-border py-10 text-center text-sm text-muted-foreground">No thread</p>
       ) : (
         <div className="post-stream">{visible.map((post) => <PostRow key={post.id} post={post} />)}</div>
       )}

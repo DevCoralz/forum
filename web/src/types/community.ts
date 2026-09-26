@@ -19,6 +19,8 @@ export interface AuthorIdentity {
   tier: AccountTier;
   roles: readonly CommunityRole[];
   labels: readonly string[];
+  /** Shimmer tags with their color, from the admin tag catalog. */
+  badges?: readonly { name: string; color: string }[];
 }
 
 export interface Category {

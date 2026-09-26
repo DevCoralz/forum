@@ -34,6 +34,7 @@ class ProfileService:
             avatar_url=user.get("avatar_url"),
             is_verified_tick=bool(user["is_verified_tick"]),
             labels=labels,
+            badges=label_repo.list_for_user_full(user["id"]),
             socials=[SocialLink(platform=s["platform"], value=s["value"]) for s in socials],
             follower_count=profile_repo.follower_count(user["id"]),
             following_count=profile_repo.following_count(user["id"]),

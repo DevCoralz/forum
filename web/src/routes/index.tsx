@@ -1,11 +1,12 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { AdCarousel } from "@/components/common/ad-carousel";
 import { CategoryStrip } from "@/components/categories/category-strip";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { PostFeed } from "@/components/posts/post-feed";
 import { postsService } from "@/services/posts";
+import { useSite } from "@/hooks/use-site";
 import type { Category, PostSummary } from "@/types/community";
 
 export const Route = createFileRoute("/")({
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const { ads } = useSite();
   const categoriesQuery = useQuery({
     queryKey: ["categories"],
     queryFn: postsService.listCategories,
@@ -44,11 +46,12 @@ function Index() {
         <section id="top" className="forum-masthead">
           <div>
             <p>Forum index</p>
-            <h1>I2P <span>Forum</span></h1>
-            <small>Recent posts and member discussions.</small>
+            <h1><span className="brand-red">I2P</span> <span>Forum</span></h1>
+            <small>Recent threads and member discussions.</small>
           </div>
           <dl><div><dt>Access</dt><dd>Member</dd></div><div><dt>Status</dt><dd>Online</dd></div></dl>
         </section>
+        <AdCarousel ads={ads} />
         <CategoryStrip categories={categories} isLoading={categoriesQuery.isLoading} />
         <PostFeed posts={posts} isLoading={postsQuery.isLoading} />
       </main>
@@ -56,4 +59,3 @@ function Index() {
     </div>
   );
 }
-

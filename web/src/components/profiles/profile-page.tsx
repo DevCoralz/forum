@@ -58,7 +58,7 @@ export function ProfilePage({ profile }: { profile: CommunityProfile }) {
                 {profile.canPublish && <span className="inline-flex items-center gap-1.5"><ShieldCheck className="size-3.5 text-cyan" /> Approved publisher</span>}
               </div>
               <div className="mt-5 flex gap-6">
-                <div className="profile-stat"><strong>{profile.postCount}</strong><span>Posts</span></div>
+                <div className="profile-stat"><strong>{profile.postCount}</strong><span>Threads</span></div>
                 <div className="profile-stat"><strong>{profile.followerCount.toLocaleString()}</strong><span>Followers</span></div>
                 <div className="profile-stat"><strong>{profile.followingCount}</strong><span>Following</span></div>
               </div>
@@ -80,7 +80,7 @@ export function ProfilePage({ profile }: { profile: CommunityProfile }) {
 
           <div className="scrollbar-none overflow-x-auto">
             <div className="profile-tabs" role="tablist" aria-label="Profile content">
-              <button data-active={activeTab === "posts"} onClick={() => setActiveTab("posts")}>Posts <span className="ml-1 text-muted-foreground">{profile.postCount}</span></button>
+              <button data-active={activeTab === "posts"} onClick={() => setActiveTab("posts")}>Threads <span className="ml-1 text-muted-foreground">{profile.postCount}</span></button>
               <button data-active={activeTab === "activity"} onClick={() => setActiveTab("activity")}>Activity</button>
             </div>
           </div>
