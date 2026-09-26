@@ -49,6 +49,9 @@ from app.api.dm.threads import router as dm_router
 # ── Public site bootstrap ─────────────────────────────────────────────────────
 from app.api.site import router as public_site_router
 
+# ── Client handshake (origin + signed token) ─────────────────────────────────
+from app.api.client import router as client_router
+
 # ── Admin ─────────────────────────────────────────────────────────────────────
 from app.api.admin.tags import router as admin_tags_router
 from app.api.admin.users import router as admin_users_router
@@ -125,8 +128,18 @@ app.add_middleware(
     allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*", "X-Client-Token"],
+    expose_headers=["*"],
 )
+
+# Speed: compress JSON responses.
+from fastapi.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=1024)
+
+# Security: only allowed origins with a fresh handshake token may call the API.
+# Registered after CORS so browser preflight requests still pass through.
+from app.core.client_guard import ClientGuardMiddleware
+app.add_middleware(ClientGuardMiddleware)
 
 
 @app.middleware("http")
@@ -184,6 +197,7 @@ app.include_router(media_router, prefix="/api/v1", tags=["media"])
 
 # ── Public site bootstrap ─────────────────────────────────────────────────────
 app.include_router(public_site_router, prefix="/api/v1", tags=["site"])
+app.include_router(client_router,      prefix="/api/v1/client", tags=["client"])
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
 app.include_router(admin_tags_router, prefix="/api/v1/admin", tags=["admin"])

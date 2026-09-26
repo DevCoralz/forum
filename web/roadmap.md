@@ -16,6 +16,15 @@ Status: services layer done (src/services: api, auth, posts, profiles, messages,
 - [x] Backend code written at backend/ (user deploys it): chat stream, DM threads,
       users/search, follow toggle, DELETE /posts/{id}, GET /me/privacy + extended
       fields, per-category post_count, PATCH /me/profile username support
+- [x] Security: backend client guard — only allowed origins reach the API and
+      must first exchange a signed short-lived token via POST /api/v1/client/handshake
+      (see api/app/core/client_guard.py; set CORS_ORIGINS to the site URL on the server)
+- [x] Frontend guard: apiRequest fetches the token automatically, retries once when
+      it expires, blocks calls to unknown addresses, CSP connect-src in root head
+- [x] Admin hidden behind a real 404 page for unauthorized visitors
+- [x] Thread + profile pages load browser-side only (ssr:false) — no more 500/try-again loop
+- [x] Speed: MySQL connection pool, 30s site-settings cache (invalidated on save),
+      gzip responses, absolute media URLs for favicon/social previews
 - [ ] Backend bugs for the user to fix when deploying:
       - GET /profiles/{username} returns 500 (profile page can't load)
       - CORS_ORIGINS must include the preview/production domains (then drop the proxy)

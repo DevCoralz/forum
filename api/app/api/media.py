@@ -32,7 +32,12 @@ def _sniff(head: bytes) -> str | None:
 
 
 def media_url(media_id: str | None) -> str | None:
-    return f"/api/v1/media/{media_id}" if media_id else None
+    # Absolute URLs (SITE_URL) so favicons and social previews work everywhere.
+    from app.core.config import SITE_URL
+    if not media_id:
+        return None
+    base = SITE_URL.rstrip("/")
+    return f"{base}/api/v1/media/{media_id}" if base and base != "http://localhost:8000" else f"/api/v1/media/{media_id}"
 
 
 async def store_upload(file: UploadFile, uploader_id: str, allow_video: bool = True) -> dict:

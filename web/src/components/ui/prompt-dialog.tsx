@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { ThemeSelect } from "@/components/ui/theme-select";
 
 export interface PromptField {
   key: string;
@@ -88,16 +89,13 @@ export function PromptDialog({
                   maxLength={field.maxLength}
                 />
               ) : field.type === "select" ? (
-                <select
-                  className="admin-input w-full"
+                <ThemeSelect
+                  className="w-full"
+                  ariaLabel={field.label}
                   value={values[field.key] ?? ""}
-                  onChange={(e) => setValues((v) => ({ ...v, [field.key]: e.target.value }))}
-                  required={field.required}
-                >
-                  {field.options?.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
+                  onChange={(next) => setValues((v) => ({ ...v, [field.key]: next }))}
+                  options={field.options ?? []}
+                />
               ) : field.type === "color" ? (
                 <input
                   type="color"

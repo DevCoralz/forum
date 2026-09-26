@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import threading
+import time
+
 from typing import Optional
 
 from app.core.database import get_db, new_id
@@ -12,11 +15,34 @@ EDITABLE_KEYS = {
 
 
 class SettingsRepository:
-    def get_all(self) -> dict[str, str]:
+    # Site settings are read on nearly every request — cache for 30s and
+    # invalidate on writes so admin changes go live immediately.
+    _cache: dict[str, str] | None = None
+    _cache_at: float = 0.0
+    _cache_lock = threading.Lock()
+    CACHE_TTL = 30.0
+
+    def _read_all(self) -> dict[str, str]:
         with get_db() as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT `key`, `value` FROM site_settings")
                 return {r["key"]: (r["value"] or "") for r in cur.fetchall()}
+
+    def get_all(self) -> dict[str, str]:
+        now = time.monotonic()
+        if self._cache is not None and now - self._cache_at < self.CACHE_TTL:
+            return self._cache
+        with self._cache_lock:
+            if self._cache is not None and time.monotonic() - self._cache_at < self.CACHE_TTL:
+                return self._cache
+            data = self._read_all()
+            self._cache = data
+            self._cache_at = time.monotonic()
+            return data
+
+    def invalidate(self) -> None:
+        self._cache = None
+        self._cache_at = 0.0
 
     def set(self, key: str, value: str, updated_by: str) -> None:
         with get_db() as conn:
@@ -27,11 +53,16 @@ class SettingsRepository:
                        ON DUPLICATE KEY UPDATE `value`=VALUES(`value`), updated_by=VALUES(updated_by)""",
                     (key, value, updated_by),
                 )
+        self.invalidate()
 
     def set_many(self, values: dict[str, str], updated_by: str) -> None:
+        changed = False
         for key, value in values.items():
             if key in EDITABLE_KEYS:
                 self.set(key, str(value), updated_by)
+                changed = True
+        if changed:
+            self.invalidate()
 
     # ── Ad slides ─────────────────────────────────────────────────────────────
     def list_ads(self, only_active: bool = False) -> list[dict]:

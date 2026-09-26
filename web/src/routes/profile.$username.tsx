@@ -17,6 +17,7 @@ async function loadProfile(username: string): Promise<CommunityProfile> {
 }
 
 export const Route = createFileRoute("/profile/$username")({
+  ssr: false, // loads with the member's own session cookies — browser only
   loader: ({ params }) => loadProfile(params.username),
   pendingComponent: LoadingSpinner,
   head: ({ params }) => ({

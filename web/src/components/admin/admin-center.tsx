@@ -16,7 +16,9 @@ import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { adminService } from "@/services/admin";
-import { ApiError } from "@/services/api";
+import { ApiError, assetUrl } from "@/services/api";
+import { ThemeSelect } from "@/components/ui/theme-select";
+import { NotFoundPage } from "@/components/common/not-found-page";
 import { useAuth } from "@/hooks/use-auth";
 import type { AdSlide, AdminUser, TagDefinition } from "@/types/admin";
 
@@ -45,13 +47,9 @@ export function AdminCenter() {
   const [tab, setTab] = useState<AdminTab>("users");
 
   if (status === "loading") return <LoadingSpinner />;
+  // Non-staff see the ordinary 404 so the admin area does not reveal it exists.
   if (!user || (user.role !== "admin" && user.role !== "super_admin")) {
-    return (
-      <div className="mx-auto max-w-md px-4 py-20 text-center">
-        <h1 className="section-title">Admin</h1>
-        <p className="mt-3 text-sm text-muted-foreground">You are not authorized to view this page.</p>
-      </div>
-    );
+    return <NotFoundPage />;
   }
 
   return (
@@ -259,13 +257,10 @@ function UsersTab() {
           onChange={(event) => setSearch(event.target.value)}
           aria-label="Search members"
         />
-        <select className="admin-input" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter by status">
-          <option value="">All</option>
-          <option value="active">Active</option>
-          <option value="suspended">Suspended</option>
-          <option value="banned">Banned</option>
-          <option value="flagged">Flagged</option>
-        </select>
+        <ThemeSelect ariaLabel="Filter by status" value={statusFilter} onChange={setStatusFilter} options={[
+          { value: "", label: "All" }, { value: "active", label: "Active" }, { value: "suspended", label: "Suspended" },
+          { value: "banned", label: "Banned" }, { value: "flagged", label: "Flagged" },
+        ]} />
         <CreateMemberForm busy={busyKey === "create-member"} onCreate={(body) => run("create-member", () => adminService.createMember(body), "Member created")} />
       </div>
 
@@ -388,16 +383,11 @@ function AssignTagDialog({
           >
             <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
               Tag
-              <select className="admin-input w-full" value={name} onChange={(e) => {
-                const next = e.target.value;
+              <ThemeSelect className="w-full" ariaLabel="Tag" value={name} onChange={(next) => {
                 setName(next);
                 const found = available.find((tag) => tag.name === next);
                 if (found) setColor(found.color);
-              }}>
-                {available.map((tag) => (
-                  <option key={tag.name} value={tag.name}>{tag.name}</option>
-                ))}
-              </select>
+              }} options={available.map((tag) => ({ value: tag.name, label: tag.name }))} />
             </label>
             <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
               Color on this member
@@ -440,10 +430,8 @@ function CreateMemberForm({ onCreate, busy }: { onCreate: (body: { username: str
       <input className="admin-input" placeholder="username" value={draft.username} onChange={(e) => setDraft({ ...draft, username: e.target.value })} required minLength={3} pattern="[A-Za-z0-9_]+" />
       <input className="admin-input" type="email" placeholder="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} required />
       <input className="admin-input" type="password" placeholder="password" value={draft.password} onChange={(e) => setDraft({ ...draft, password: e.target.value })} required minLength={8} />
-      <select className="admin-input" value={draft.role} onChange={(e) => setDraft({ ...draft, role: e.target.value })}>
-        <option value="free">free</option>
-        <option value="premium">premium</option>
-      </select>
+      <ThemeSelect ariaLabel="Role" value={draft.role} onChange={(v) => setDraft({ ...draft, role: v })}
+        options={[{ value: "free", label: "free" }, { value: "premium", label: "premium" }]} />
       <button type="submit" className="admin-input admin-btn" disabled={busy}>{busy ? <BusySpinner /> : <Plus className="size-3.5" />}Create</button>
       <button type="button" className="admin-input admin-btn" onClick={() => setOpen(false)}><X className="size-3.5" /></button>
     </form>
@@ -554,41 +542,57 @@ function SiteTab() {
   const query = useQuery({ queryKey: ["admin-site"], queryFn: adminService.getSiteSettings });
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
+  // Local preview of a freshly uploaded image; it only goes live when saved.
+  const [pendingPreview, setPendingPreview] = useState<string | null>(null);
+
+  useEffect(() => () => { if (pendingPreview) URL.revokeObjectURL(pendingPreview); }, [pendingPreview]);
 
   const save = useMutation({
     mutationFn: (values: Record<string, string>) => adminService.putSiteSettings(values),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["admin-site"] });
-      void queryClient.invalidateQueries({ queryKey: ["site"] });
+    onSuccess: async (fresh) => {
+      queryClient.setQueryData(["admin-site"], fresh);
+      setDraft({});
+      setPendingPreview(null);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin-site"] }),
+        queryClient.invalidateQueries({ queryKey: ["site"] }),
+      ]);
       toast.success("Site settings saved");
     },
     onError: (error) => toast.error(errText(error, "Could not save settings")),
   });
 
   if (query.isLoading) return <LoadingSpinner />;
-  const settings = { ...query.data, ...draft };
+  const saved = (query.data ?? {}) as Record<string, string | null | undefined>;
+  const settings: Record<string, string | null | undefined> = { ...saved, ...draft };
   const set = (key: string, value: string) => setDraft((current) => ({ ...current, [key]: value }));
   const dirty = Object.keys(draft).length > 0;
 
   // One image everywhere: beside the name, browser tab icon, and social preview.
-  const siteImage = settings.site_logo_url ?? settings.site_favicon_url ?? settings.site_og_url ?? null;
+  const savedImage = assetUrl(saved["site_logo_url"] ?? saved["site_favicon_url"] ?? saved["site_og_url"] ?? null) ?? null;
+  const siteImage = pendingPreview ?? savedImage;
 
   async function uploadImage(file: File | null) {
     if (!file) return;
     setUploading(true);
     try {
       const media = await adminService.uploadMedia(file);
-      await save.mutateAsync({
+      setPendingPreview(URL.createObjectURL(file));
+      setDraft((current) => ({
+        ...current,
         site_logo_media_id: media.id,
         site_favicon_media_id: media.id,
         site_og_media_id: media.id,
-      });
+      }));
+      toast.success("Image ready. Press Save settings to publish it.");
     } catch (error) {
       toast.error(errText(error, "Upload failed"));
     } finally {
       setUploading(false);
     }
   }
+
+  const val = (key: string, fallback = "") => settings[key] ?? fallback;
 
   return (
     <div className="admin-grid">
@@ -597,14 +601,14 @@ function SiteTab() {
           {siteImage ? <img src={siteImage} alt="Site image" /> : <span className="admin-media-empty">No image yet</span>}
         </span>
         <div className="admin-media-fields">
-          <strong>Site image</strong>
-          <p>Shown beside the site name, as the browser tab icon, and as the social share preview — one upload covers all three.</p>
+          <strong>Site image{pendingPreview ? " (not saved yet)" : ""}</strong>
+          <p>Shown beside the site name, as the browser tab icon, and as the social share preview. One upload covers all three.</p>
           <label className="admin-upload">
             <input
               type="file"
               accept="image/png,image/jpeg,image/webp,image/gif,image/x-icon"
               disabled={uploading}
-              onChange={(e) => void uploadImage(e.target.files?.[0] ?? null)}
+              onChange={(e) => { void uploadImage(e.target.files?.[0] ?? null); e.target.value = ""; }}
             />
             <span className="admin-input admin-btn" aria-hidden="true">
               {uploading ? <BusySpinner /> : <ImagePlus className="size-3.5" />}
@@ -615,48 +619,49 @@ function SiteTab() {
       </div>
 
       <label>Site name
-        <input className="admin-input" value={settings.site_name ?? ""} onChange={(e) => set("site_name", e.target.value)} />
+        <input className="admin-input" value={val("site_name")} onChange={(e) => set("site_name", e.target.value)} />
       </label>
       <label>Currency
-        <input className="admin-input" value={settings.site_currency ?? ""} onChange={(e) => set("site_currency", e.target.value)} />
+        <input className="admin-input" value={val("site_currency")} onChange={(e) => set("site_currency", e.target.value)} />
       </label>
       <label className="admin-span2">Footer text
-        <input className="admin-input" value={settings.site_footer ?? ""} onChange={(e) => set("site_footer", e.target.value)} />
+        <input className="admin-input" value={val("site_footer")} onChange={(e) => set("site_footer", e.target.value)} />
       </label>
       <label className="admin-span2">Site description
-        <textarea className="admin-input" rows={2} value={settings.site_description ?? ""} onChange={(e) => set("site_description", e.target.value)} />
+        <textarea className="admin-input" rows={2} value={val("site_description")} onChange={(e) => set("site_description", e.target.value)} />
       </label>
       <label className="admin-span2">Keywords
-        <input className="admin-input" value={settings.site_keywords ?? ""} onChange={(e) => set("site_keywords", e.target.value)} />
+        <input className="admin-input" value={val("site_keywords")} onChange={(e) => set("site_keywords", e.target.value)} />
       </label>
       <label>Site mode
-        <select className="admin-input" value={settings.site_mode ?? "production"} onChange={(e) => set("site_mode", e.target.value)}>
-          <option value="production">Production</option>
-          <option value="maintenance">Maintenance</option>
-        </select>
+        <ThemeSelect ariaLabel="Site mode" value={val("site_mode", "production") || "production"} onChange={(v) => set("site_mode", v)}
+          options={[{ value: "production", label: "Production" }, { value: "maintenance", label: "Maintenance" }]} />
       </label>
       <label>Registration
-        <select className="admin-input" value={settings.registration_open ?? "true"} onChange={(e) => set("registration_open", e.target.value)}>
-          <option value="true">Open</option>
-          <option value="false">Closed</option>
-        </select>
+        <ThemeSelect ariaLabel="Registration" value={val("registration_open", "true") || "true"} onChange={(v) => set("registration_open", v)}
+          options={[{ value: "true", label: "Open" }, { value: "false", label: "Closed" }]} />
       </label>
       <label>Social preview title
-        <input className="admin-input" value={settings.og_title ?? ""} onChange={(e) => set("og_title", e.target.value)} />
+        <input className="admin-input" value={val("og_title")} onChange={(e) => set("og_title", e.target.value)} />
       </label>
       <label>Social preview description
-        <input className="admin-input" value={settings.og_description ?? ""} onChange={(e) => set("og_description", e.target.value)} />
+        <input className="admin-input" value={val("og_description")} onChange={(e) => set("og_description", e.target.value)} />
       </label>
 
-      <div className="admin-span2">
+      <div className="admin-span2 flex flex-wrap gap-2">
         <button
           className="admin-input admin-btn"
-          disabled={!dirty || save.isPending}
+          disabled={!dirty || save.isPending || uploading}
           onClick={() => save.mutate(draft)}
         >
           {save.isPending ? <BusySpinner /> : <Wrench className="size-3.5" />}
           Save settings
         </button>
+        {dirty && (
+          <button className="admin-input admin-btn" disabled={save.isPending} onClick={() => { setDraft({}); setPendingPreview(null); }}>
+            <X className="size-3.5" /> Discard changes
+          </button>
+        )}
       </div>
     </div>
   );
@@ -786,7 +791,7 @@ function AdsTab() {
         {ads.map((ad) => (
           <li key={ad.id} className="admin-user-row">
             <div className="flex min-w-0 items-center gap-3">
-              {ad.media_url && ad.media_type === "image" && <img src={ad.media_url} alt="" className="h-10 w-16 rounded object-cover" />}
+              {ad.media_url && ad.media_type === "image" && <img src={assetUrl(ad.media_url)} alt="" className="h-10 w-16 rounded object-cover" />}
               <div className="min-w-0">
                 <strong className="block truncate text-sm">{ad.description || "(no description)"}</strong>
                 <small className="text-xs text-muted-foreground">{ad.media_type} · #{ad.sort_order} · {ad.is_active ? "active" : "hidden"}{ad.url ? ` · ${ad.url}` : ""}</small>

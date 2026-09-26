@@ -1,3 +1,5 @@
+import atexit
+import queue
 import uuid
 from contextlib import contextmanager
 
@@ -6,8 +8,13 @@ import pymysql.cursors
 
 from app.core.config import DB_HOST, DB_NAME, DB_PASS, DB_PORT, DB_USER
 
+# Connection pool: reusing open MySQL connections removes the per-request
+# connect handshake and makes the API respond noticeably faster.
+_POOL_SIZE = 10
+_pool: queue.Queue[pymysql.connections.Connection] = queue.Queue(maxsize=_POOL_SIZE)
 
-def _conn(**kwargs):
+
+def _connect(**kwargs):
     return pymysql.connect(
         host=DB_HOST,
         port=DB_PORT,
@@ -21,9 +28,37 @@ def _conn(**kwargs):
     )
 
 
+def _conn(**kwargs):
+    return _connect(**kwargs)
+
+
+def _checkout() -> pymysql.connections.Connection:
+    try:
+        conn = _pool.get_nowait()
+        conn.ping(reconnect=True)  # drops dead connections, transparently reopens
+        return conn
+    except queue.Empty:
+        return _connect()
+    except Exception:
+        return _connect()
+
+
+def _release(conn: pymysql.connections.Connection) -> None:
+    try:
+        if conn.open:
+            _pool.put_nowait(conn)
+            return
+    except Exception:
+        pass
+    try:
+        conn.close()
+    except Exception:
+        pass
+
+
 @contextmanager
 def get_db():
-    conn = _conn()
+    conn = _checkout()
     try:
         yield conn
         conn.commit()
@@ -31,7 +66,20 @@ def get_db():
         conn.rollback()
         raise
     finally:
-        conn.close()
+        _release(conn)
+
+
+@atexit.register
+def _close_pool() -> None:
+    while True:
+        try:
+            conn = _pool.get_nowait()
+        except queue.Empty:
+            return
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 
 def new_id() -> str:

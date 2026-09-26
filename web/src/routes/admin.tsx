@@ -4,7 +4,7 @@ import { AdminCenter } from "@/components/admin/admin-center";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Admin Management Center — I2P Forum" },
+      { title: "I2P Forum" },
       { name: "robots", content: "noindex" },
 { property: "og:type", content: "website" },
     ],

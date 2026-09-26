@@ -15,3 +15,6 @@
 - The verified tick is a blue badge with a white check (`VerifiedBadge` component), never the default cyan icon.
 - One admin "Site image" upload feeds the logo, favicon, and social preview (written to all three settings keys for backward compatibility).
 - The `api/` folder holds the owner-deployed FastAPI backend; the frontend talks to it via `VITE_API_URL` — keep both in every export.
+
+## API client guard (2026-09)
+The backend only answers allowed origins that carry a signed short-lived token from `POST /api/v1/client/handshake` (`api/app/core/client_guard.py`); `src/services/api.ts` fetches it automatically and retries once on expiry. Why: stops other sites and spoofed callers from reaching the API while keeping the browser flow invisible.

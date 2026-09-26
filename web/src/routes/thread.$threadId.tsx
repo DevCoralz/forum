@@ -17,6 +17,7 @@ async function loadThread(threadId: string): Promise<PostDetail> {
 }
 
 export const Route = createFileRoute("/thread/$threadId")({
+  ssr: false, // loads with the member's own session cookies — browser only
   loader: ({ params }) => loadThread(params.threadId),
   pendingComponent: LoadingSpinner,
   head: ({ loaderData }) => {
