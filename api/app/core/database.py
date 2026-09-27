@@ -59,13 +59,26 @@ def _release(conn: pymysql.connections.Connection) -> None:
 @contextmanager
 def get_db():
     conn = _checkout()
+    committed = False
     try:
         yield conn
         conn.commit()
-    except Exception:
-        conn.rollback()
-        raise
+        committed = True
     finally:
+        # A cancelled request (client disconnect, ASGI CancelledError) lands
+        # here too — asyncio.CancelledError is not an Exception subclass, so
+        # the old `except Exception: rollback` never ran for it and the
+        # connection went back to the pool mid-transaction. Any interpreter
+        # in flight when a task is cancelled must roll back unconditionally,
+        # not just on a caught Exception, or the pool slowly fills with
+        # connections holding an uncommitted transaction from a request that
+        # never finished — that's what eventually starves the pool and needs
+        # a restart to clear.
+        if not committed:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
         _release(conn)
 
 

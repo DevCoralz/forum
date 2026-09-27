@@ -8,7 +8,7 @@ import { useSite } from "@/hooks/use-site";
 
 export function SiteHeader() {
   const { user, status, signOut } = useAuth();
-  const { siteName } = useSite();
+  const { siteName, settings } = useSite();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const isStaff = user?.role === "admin" || user?.role === "super_admin";
@@ -39,7 +39,7 @@ export function SiteHeader() {
       )}
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-lg">
         <div className="relative mx-auto grid h-16 max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 sm:px-6 lg:px-8">
-          <Link to="/" className="min-w-0"><BrandMark name={siteName} /></Link>
+          <Link to="/" className="min-w-0"><BrandMark name={siteName} logoUrl={settings.site_logo_url} /></Link>
           <div className="flex shrink-0 items-center justify-end gap-1.5 sm:gap-2">
             <label className="hidden h-9 w-60 items-center gap-2 rounded-full border border-border bg-surface/70 px-3 xl:flex">
               <Search className="size-4 text-muted-foreground" />

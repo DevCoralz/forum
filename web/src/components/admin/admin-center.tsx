@@ -6,6 +6,7 @@ import {
   Palette, Pencil, Plus, Settings as SettingsIcon, ShieldCheck, Tag, Trash2, TriangleAlert,
   UserPlus, Wrench, X,
 } from "lucide-react";
+import { SITE_SOCIAL_PLATFORMS } from "@/lib/site-socials";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -863,6 +864,7 @@ function SiteTab() {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["admin-site"], queryFn: adminService.getSiteSettings });
   const [draft, setDraft] = useState<Record<string, string>>({});
+  const [draftSocials, setDraftSocials] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
   // Local preview of a freshly uploaded image; it only goes live when saved.
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
@@ -870,13 +872,13 @@ function SiteTab() {
   useEffect(() => () => { if (pendingPreview) URL.revokeObjectURL(pendingPreview); }, [pendingPreview]);
 
   const save = useMutation({
-    mutationFn: (values: Record<string, string>) => {
-      const payload: Record<string, string | Record<string, string>> = { ...values };
-      return adminService.putSiteSettings(payload);
+    mutationFn: (values: Record<string, string | Record<string, string>>) => {
+      return adminService.putSiteSettings(values);
     },
     onSuccess: async (fresh) => {
       queryClient.setQueryData(["admin-site"], fresh);
       setDraft({});
+      setDraftSocials({});
       setPendingPreview(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-site"] }),
@@ -888,10 +890,16 @@ function SiteTab() {
   });
 
   if (query.isLoading) return <LoadingSpinner />;
-  const saved = (query.data ?? {}) as Record<string, string | null | undefined>;
+  const saved = (query.data ?? {}) as Record<string, string | null | undefined> & { site_socials?: Record<string, string> };
   const settings: Record<string, string | null | undefined> = { ...saved, ...draft };
   const set = (key: string, value: string) => setDraft((current) => ({ ...current, [key]: value }));
-  const dirty = Object.keys(draft).length > 0;
+
+  // site_socials is the one nested (non-string) field — kept in its own draft
+  // slot rather than the flat `draft` map, then merged into the save payload
+  // alongside everything else.
+  const socialsDraft: Record<string, string> = { ...(saved.site_socials ?? {}), ...draftSocials };
+  const setSocial = (key: string, value: string) => setDraftSocials((current) => ({ ...current, [key]: value }));
+  const dirty = Object.keys(draft).length > 0 || Object.keys(draftSocials).length > 0;
 
   // One image everywhere: beside the name, browser tab icon, and social preview.
   const savedImage = assetUrl(saved["site_logo_url"] ?? saved["site_favicon_url"] ?? saved["site_og_url"] ?? null) ?? null;
@@ -973,17 +981,35 @@ function SiteTab() {
         <input className="admin-input" value={val("og_description")} onChange={(e) => set("og_description", e.target.value)} />
       </label>
 
+      <div className="admin-span2">
+        <strong className="text-xs font-semibold uppercase text-muted-foreground">Social links</strong>
+        <p className="mt-1 text-xs text-muted-foreground">Shown as icons in the site footer. Leave a field blank to hide that icon.</p>
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          {SITE_SOCIAL_PLATFORMS.map(({ key, label, icon: Icon }) => (
+            <label key={key} className="flex items-center gap-2">
+              <Icon className="size-4 shrink-0 text-muted-foreground" />
+              <input
+                className="admin-input"
+                placeholder={`${label} URL`}
+                value={socialsDraft[key] ?? ""}
+                onChange={(e) => setSocial(key, e.target.value)}
+              />
+            </label>
+          ))}
+        </div>
+      </div>
+
       <div className="admin-span2 flex flex-wrap gap-2">
         <button
           className="admin-input admin-btn"
           disabled={!dirty || save.isPending || uploading}
-          onClick={() => save.mutate(draft)}
+          onClick={() => save.mutate(Object.keys(draftSocials).length > 0 ? { ...draft, site_socials: socialsDraft } : draft)}
         >
           {save.isPending ? <BusySpinner /> : <Wrench className="size-3.5" />}
           Save settings
         </button>
         {dirty && (
-          <button className="admin-input admin-btn" disabled={save.isPending} onClick={() => { setDraft({}); setPendingPreview(null); }}>
+          <button className="admin-input admin-btn" disabled={save.isPending} onClick={() => { setDraft({}); setDraftSocials({}); setPendingPreview(null); }}>
             <X className="size-3.5" /> Discard changes
           </button>
         )}

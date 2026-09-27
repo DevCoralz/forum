@@ -13,4 +13,13 @@ if __name__ == "__main__":
         proxy_headers=True,
         forwarded_allow_ips="*",
         reload=False,
+        # A client (Cloudflare edge, or the SSR handshake fetch) that hangs up
+        # mid-request used to leave the socket half-open until the OS default
+        # keep-alive kicked in — during that window the DB connection it held
+        # stayed checked out of the pool. Shorter keep-alive means a dropped
+        # connection is reclaimed in seconds, not minutes.
+        timeout_keep_alive=15,
+        # Bound how long a single request can run before Uvicorn gives up on
+        # it, so one wedged handler can't hold a pooled DB connection forever.
+        timeout_graceful_shutdown=10,
     )
