@@ -1,5 +1,5 @@
-import { Link } from "@tanstack/react-router";
 import { Cookie, Crown, Database, FileText, Flame, Grid2X2, Settings } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import type { Category } from "@/types/community";
 
@@ -10,7 +10,7 @@ export function CategoryStrip({ categories, isLoading = false }: { categories: C
     <section id="categories" className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
       <div className="mb-5 flex items-center justify-between">
         <h2 className="section-title">Categories</h2>
-        <a className="text-xs font-medium text-primary" href="#latest">Latest Threads</a>
+        <Link to="/" className="text-xs font-medium text-primary">Home</Link>
       </div>
       <div className="scrollbar-none flex snap-x gap-2.5 overflow-x-auto pb-2">
         {isLoading && <LoadingSpinner />}
@@ -27,9 +27,7 @@ export function CategoryStrip({ categories, isLoading = false }: { categories: C
               className="category-pill group"
               data-tone={category.tone}
             >
-              <span className="category-icon">
-                {category.iconUrl ? <img src={category.iconUrl} alt="" className="size-full rounded object-cover" /> : <Icon />}
-              </span>
+              <span className="category-icon"><Icon /></span>
               <span className="text-left"><strong>{category.name}</strong><small>{category.postCount >= 1000 ? `${(category.postCount / 1000).toFixed(1)}k` : category.postCount} threads</small></span>
             </Link>
           );

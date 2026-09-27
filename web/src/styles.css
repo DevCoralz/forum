@@ -407,3 +407,71 @@ h1 { color: var(--red-heading); }
 .admin-dialog-field { display: flex; flex-direction: column; gap: .35rem; font-size: .72rem; color: var(--muted-foreground); margin-bottom: .7rem; }
 .admin-dialog-check { display: flex; align-items: center; gap: .45rem; font-size: .75rem; color: var(--foreground); margin-bottom: .7rem; }
 .form-error { font-size: .72rem; color: var(--red-heading); }
+
+/* ── Shared page shell (category, tool detail) ─────────────────────────── */
+.page { margin: 0 auto; max-width: 44rem; padding: 1.4rem 1.1rem 3.5rem; }
+.muted-note { margin: .9rem 0; font-size: .78rem; color: var(--muted-foreground); }
+.linkish { font-size: .74rem; color: var(--primary); background: none; border: 0; cursor: pointer; padding: 0; }
+.linkish:hover { text-decoration: underline; }
+.form-error { margin-top: .5rem; font-size: .74rem; color: oklch(0.7 0.19 22); }
+.ghost-back { display: grid; place-items: center; width: 1.9rem; height: 1.9rem; flex-shrink: 0; border: 1px solid var(--border); border-radius: .4rem; color: var(--foreground); background: color-mix(in oklab, var(--surface) 70%, transparent); cursor: pointer; transition: border-color 160ms ease, color 160ms ease; }
+.ghost-back:hover { border-color: color-mix(in oklab, var(--primary) 55%, transparent); color: var(--primary); }
+.category-page-head { display: flex; align-items: center; gap: .8rem; margin-bottom: 1.1rem; }
+.category-page-title { font-family: var(--font-display); font-size: 1.35rem; font-weight: 600; color: var(--red-heading); line-height: 1.25; }
+.category-page-sub { margin-top: .15rem; font-size: .7rem; color: var(--muted-foreground); }
+
+/* ── Subcategory pills: transparent, 5 per row, half comment-button size ── */
+.subcat-section { margin: 1.1rem 0 1.4rem; }
+.subcat-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .45rem; }
+.subcat-pill { display: flex; min-width: 0; align-items: center; justify-content: center; gap: .3rem; border: 1px solid color-mix(in oklab, var(--border) 75%, transparent); border-radius: 999px; padding: .28rem .5rem; background: transparent; font-size: .6rem; font-weight: 500; color: var(--foreground); text-align: left; transition: border-color 160ms ease, color 160ms ease; }
+.subcat-pill:hover { border-color: color-mix(in oklab, var(--primary) 55%, transparent); color: var(--primary); }
+.subcat-pill.is-active { border-color: var(--primary); color: var(--primary); background: color-mix(in oklab, var(--primary) 10%, transparent); }
+.subcat-pill-icon { width: .85rem; height: .85rem; flex-shrink: 0; border-radius: .18rem; object-fit: cover; background: transparent; }
+.subcat-pill-dot { width: .5rem; height: .5rem; flex-shrink: 0; border-radius: 999px; background: color-mix(in oklab, var(--primary) 55%, transparent); }
+.subcat-pill-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.subcat-more { margin-top: .7rem; display: inline-flex; align-items: center; gap: .3rem; border: 0; background: none; font-size: .72rem; font-weight: 600; color: var(--primary); cursor: pointer; }
+.subcat-more:hover { text-decoration: underline; }
+@media (max-width: 380px) { .subcat-grid { gap: .35rem; } .subcat-pill { padding: .26rem .4rem; font-size: .56rem; } }
+
+/* ── Tool rows on the category page ─────────────────────────────────────── */
+.post-list { display: flex; flex-direction: column; gap: .55rem; }
+.post-list-head { margin-bottom: .3rem; }
+.tool-row { display: flex; align-items: center; gap: .65rem; border: 1px solid color-mix(in oklab, var(--border) 70%, transparent); border-radius: .4rem; padding: .55rem .7rem; background: color-mix(in oklab, var(--surface) 42%, transparent); transition: border-color 160ms ease, background 160ms ease; }
+.tool-row:hover { border-color: color-mix(in oklab, var(--primary) 50%, transparent); background: color-mix(in oklab, var(--primary) 7%, transparent); }
+.tool-row-icon { display: grid; place-items: center; width: 1.9rem; height: 1.9rem; flex-shrink: 0; border-radius: .3rem; overflow: hidden; background: color-mix(in oklab, var(--border) 40%, transparent); color: var(--muted-foreground); }
+.tool-row-icon img { width: 100%; height: 100%; object-fit: cover; }
+.tool-row-main { min-width: 0; flex: 1; }
+.tool-row-title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .78rem; font-weight: 600; color: var(--foreground); }
+.tool-row-meta { display: inline-flex; align-items: center; gap: .25rem; margin-top: .12rem; font-size: .6rem; color: var(--muted-foreground); }
+.tool-row-price { display: inline-flex; align-items: center; gap: .25rem; flex-shrink: 0; font-size: .68rem; font-weight: 600; color: var(--primary); }
+
+/* ── Tool detail page ───────────────────────────────────────────────────── */
+.tool-meta { margin: 1rem 0; border: 1px solid color-mix(in oklab, var(--border) 70%, transparent); border-radius: .5rem; padding: .8rem; background: color-mix(in oklab, var(--surface) 46%, transparent); }
+.tool-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(6.2rem, 1fr)); gap: .7rem; }
+.tool-meta-item { display: flex; align-items: flex-start; gap: .4rem; color: var(--primary); }
+.tool-meta-item strong { display: block; font-size: .74rem; color: var(--foreground); word-break: break-word; }
+.tool-meta-item em { display: block; margin-top: .1rem; font-size: .56rem; font-style: normal; text-transform: uppercase; letter-spacing: .04em; color: var(--muted-foreground); }
+.tool-file-name { margin-top: .7rem; font-size: .68rem; color: var(--muted-foreground); word-break: break-all; }
+.tool-about { margin: 1.2rem 0; }
+.tool-about h2 { font-family: var(--font-display); font-size: 1rem; color: var(--red-heading); margin-bottom: .5rem; }
+.tool-about-body { font-size: .82rem; line-height: 1.65; color: var(--foreground); white-space: pre-wrap; }
+.tool-actions { margin: 1.3rem 0; }
+.btn-primary { display: inline-flex; align-items: center; gap: .45rem; border: 0; border-radius: .4rem; padding: .6rem 1.15rem; font-size: .8rem; font-weight: 600; color: oklch(0.18 0.03 261); background: var(--primary); cursor: pointer; }
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-primary:disabled { opacity: .55; cursor: not-allowed; }
+
+/* ── Write page (threads / tools composer) ──────────────────────────────── */
+.write-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: .3rem; border: 1px solid var(--border); border-radius: .5rem; padding: .3rem; background: color-mix(in oklab, var(--surface) 60%, transparent); }
+.write-tab { border: 0; border-radius: .38rem; padding: .5rem 0; font-size: .8rem; font-weight: 600; color: var(--muted-foreground); background: transparent; cursor: pointer; transition: background 160ms ease, color 160ms ease; }
+.write-tab:hover { color: var(--foreground); }
+.write-tab.is-active { color: oklch(0.18 0.03 261); background: var(--primary); }
+.write-web-preview { border: 1px dashed color-mix(in oklab, var(--border) 80%, transparent); border-radius: .5rem; padding: .7rem .85rem; background: color-mix(in oklab, var(--surface) 35%, transparent); }
+.upload-chip { display: inline-flex; align-items: center; gap: .4rem; max-width: 14rem; border: 1px solid var(--border); border-radius: 999px; padding: .42rem .8rem; font-size: .72rem; font-weight: 500; color: var(--foreground); background: color-mix(in oklab, var(--surface) 55%, transparent); cursor: pointer; transition: border-color 160ms ease, color 160ms ease; }
+.upload-chip:hover:not(:disabled) { border-color: color-mix(in oklab, var(--primary) 55%, transparent); color: var(--primary); }
+.upload-chip:disabled { opacity: .5; cursor: not-allowed; }
+.upload-chip.is-active { border-color: color-mix(in oklab, oklch(0.7 0.19 22) 60%, transparent); color: oklch(0.7 0.19 22); }
+.upload-chip span, .upload-chip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.write-thumb { position: relative; display: inline-block; width: 4.2rem; height: 4.2rem; border: 1px solid var(--border); border-radius: .4rem; overflow: hidden; }
+.write-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.write-thumb-x { position: absolute; top: .15rem; right: .15rem; display: grid; place-items: center; width: 1.1rem; height: 1.1rem; border: 0; border-radius: 999px; color: #fff; background: rgb(0 0 0 / 62%); cursor: pointer; }
+.write-thumb-x:hover { background: oklch(0.62 0.2 29 / 85%); }

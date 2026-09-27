@@ -47,12 +47,12 @@ def _sniff(head: bytes) -> str | None:
 
 
 def media_url(media_id: str | None) -> str | None:
-    # Absolute URLs (SITE_URL) so favicons and social previews work everywhere.
-    from app.core.config import SITE_URL
+    # Always relative: the frontend resolves it against its own API base
+    # (VITE_API_URL). An absolute SITE_URL here breaks when the site domain
+    # and the API domain differ — that was why saved images showed placeholders.
     if not media_id:
         return None
-    base = SITE_URL.rstrip("/")
-    return f"{base}/api/v1/media/{media_id}" if base and base != "http://localhost:8000" else f"/api/v1/media/{media_id}"
+    return f"/api/v1/media/{media_id}"
 
 
 async def store_upload(file: UploadFile, uploader_id: str, allow_video: bool = True) -> dict:
@@ -85,7 +85,13 @@ async def store_upload(file: UploadFile, uploader_id: str, allow_video: bool = T
         if kind != "file":
             size = strip_metadata(path, mime) or size
         name = re.sub(r"[^A-Za-z0-9._-]", "_", file.filename or "file")[:120]
-        chat_id, msg_id = await telegram.upload(path, name, mime)
+        chat_id, msg_id, sent_as_photo, actual_size = await telegram.upload(path, name, mime)
+        if sent_as_photo:
+            # Telegram recompressed the image into a channel photo (JPEG).
+            # Serve and record what is actually stored, not the original file.
+            mime = "image/jpeg"
+            if actual_size:
+                size = actual_size
     finally:
         try:
             os.remove(path)

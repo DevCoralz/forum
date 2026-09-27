@@ -1,4 +1,4 @@
-import { Menu, LogOut, MessageCircle, PenLine, Search, Send, Settings, Twitter, UserRound, X, Youtube, TriangleAlert } from "lucide-react";
+import { Menu, LogOut, MessageCircle, PenLine, Search, Settings, UserRound, X, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -8,13 +8,7 @@ import { useSite } from "@/hooks/use-site";
 
 export function SiteHeader() {
   const { user, status, signOut } = useAuth();
-  const { siteName, settings } = useSite();
-  const socials = settings.site_socials ?? {};
-  const socialLinks = [
-    { key: "telegram", href: socials["telegram"], icon: Send, label: "Telegram" },
-    { key: "twitter", href: socials["twitter"], icon: Twitter, label: "X (Twitter)" },
-    { key: "youtube", href: socials["youtube"], icon: Youtube, label: "YouTube" },
-  ].filter((entry) => Boolean(entry.href));
+  const { siteName } = useSite();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const isStaff = user?.role === "admin" || user?.role === "super_admin";
@@ -51,12 +45,8 @@ export function SiteHeader() {
               <Search className="size-4 text-muted-foreground" />
               <input className="min-w-0 flex-1 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground" placeholder="Search threads, categories..." aria-label="Search threads and categories" />
             </label>
-            {socialLinks.map(({ key, href, icon: Icon, label }) => (
-              <Button key={key} asChild variant="ghost" size="icon" className="hidden rounded-full text-muted-foreground sm:inline-flex">
-                <a href={href} target="_blank" rel="noreferrer noopener" aria-label={`${siteName} on ${label}`}><Icon /></a>
-              </Button>
-            ))}
             <Button asChild variant="ghost" size="icon" className="rounded-full text-muted-foreground">
+
               <Link to="/messages" aria-label="Messages"><MessageCircle /></Link>
             </Button>
             {user ? (

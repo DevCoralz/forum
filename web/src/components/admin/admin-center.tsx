@@ -863,7 +863,6 @@ function SiteTab() {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["admin-site"], queryFn: adminService.getSiteSettings });
   const [draft, setDraft] = useState<Record<string, string>>({});
-  const [socialsDraft, setSocialsDraft] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
   // Local preview of a freshly uploaded image; it only goes live when saved.
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
@@ -873,19 +872,11 @@ function SiteTab() {
   const save = useMutation({
     mutationFn: (values: Record<string, string>) => {
       const payload: Record<string, string | Record<string, string>> = { ...values };
-      if (Object.keys(socialsDraft).length > 0) {
-        payload["site_socials"] = {
-          ...(typeof saved["site_socials"] === "object" && saved["site_socials"] !== null
-            ? saved["site_socials"] as Record<string, string> : {}),
-          ...socialsDraft,
-        };
-      }
       return adminService.putSiteSettings(payload);
     },
     onSuccess: async (fresh) => {
       queryClient.setQueryData(["admin-site"], fresh);
       setDraft({});
-      setSocialsDraft({});
       setPendingPreview(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-site"] }),
@@ -900,8 +891,7 @@ function SiteTab() {
   const saved = (query.data ?? {}) as Record<string, string | null | undefined>;
   const settings: Record<string, string | null | undefined> = { ...saved, ...draft };
   const set = (key: string, value: string) => setDraft((current) => ({ ...current, [key]: value }));
-  const setSocial = (key: string, value: string) => setSocialsDraft((current) => ({ ...current, [key]: value }));
-  const dirty = Object.keys(draft).length > 0 || Object.keys(socialsDraft).length > 0;
+  const dirty = Object.keys(draft).length > 0;
 
   // One image everywhere: beside the name, browser tab icon, and social preview.
   const savedImage = assetUrl(saved["site_logo_url"] ?? saved["site_favicon_url"] ?? saved["site_og_url"] ?? null) ?? null;
@@ -981,18 +971,6 @@ function SiteTab() {
       </label>
       <label>Social preview description
         <input className="admin-input" value={val("og_description")} onChange={(e) => set("og_description", e.target.value)} />
-      </label>
-      <label>Telegram link
-        <input className="admin-input" placeholder="https://t.me/yourchannel" value={socialsDraft["telegram"] ?? val("telegram")} onChange={(e) => setSocial("telegram", e.target.value)} />
-      </label>
-      <label>X / Twitter link
-        <input className="admin-input" placeholder="https://x.com/yourhandle" value={socialsDraft["twitter"] ?? val("twitter")} onChange={(e) => setSocial("twitter", e.target.value)} />
-      </label>
-      <label>Discord link
-        <input className="admin-input" placeholder="https://discord.gg/yourinvite" value={socialsDraft["discord"] ?? val("discord")} onChange={(e) => setSocial("discord", e.target.value)} />
-      </label>
-      <label>YouTube link
-        <input className="admin-input" placeholder="https://youtube.com/@yourchannel" value={socialsDraft["youtube"] ?? val("youtube")} onChange={(e) => setSocial("youtube", e.target.value)} />
       </label>
 
       <div className="admin-span2 flex flex-wrap gap-2">
