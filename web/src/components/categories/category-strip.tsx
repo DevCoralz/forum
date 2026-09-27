@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { Cookie, Crown, Database, FileText, Flame, Grid2X2, Settings } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import type { Category } from "@/types/community";
@@ -19,10 +20,18 @@ export function CategoryStrip({ categories, isLoading = false }: { categories: C
         {categories.map((category) => {
           const Icon = icons[category.icon];
           return (
-            <a key={category.id} href="#latest" className="category-pill group" data-tone={category.tone}>
-              <span className="category-icon"><Icon /></span>
+            <Link
+              key={category.id}
+              to="/category/$categoryId"
+              params={{ categoryId: category.id }}
+              className="category-pill group"
+              data-tone={category.tone}
+            >
+              <span className="category-icon">
+                {category.iconUrl ? <img src={category.iconUrl} alt="" className="size-full rounded object-cover" /> : <Icon />}
+              </span>
               <span className="text-left"><strong>{category.name}</strong><small>{category.postCount >= 1000 ? `${(category.postCount / 1000).toFixed(1)}k` : category.postCount} threads</small></span>
-            </a>
+            </Link>
           );
         })}
       </div>
