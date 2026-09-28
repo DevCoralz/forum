@@ -21,14 +21,14 @@ export const Route = createFileRoute("/thread/$threadId")({
   loader: ({ params }) => loadThread(params.threadId),
   pendingComponent: LoadingSpinner,
   head: ({ loaderData }) => {
-    if (!loaderData) return { meta: [{ title: "Thread not found — I2P Forum" }, { name: "robots", content: "noindex" }] };
+    if (!loaderData) return { meta: [{ title: "Thread not found — Coralz" }, { name: "robots", content: "noindex" }] };
     const { title } = loaderData;
-    const excerpt = `${title} — a ${loaderData.category} thread on I2P Forum.`;
+    const excerpt = `${title} — a ${loaderData.category} thread on Coralz.`;
     return {
       meta: [
-        { title: `${title} — I2P Forum` },
+        { title: `${title} — Coralz` },
         { name: "description", content: excerpt },
-        { property: "og:title", content: `${title} — I2P Forum` },
+        { property: "og:title", content: `${title} — Coralz` },
         { property: "og:description", content: excerpt },
         { property: "og:type", content: "article" },
         { name: "twitter:card", content: "summary" },

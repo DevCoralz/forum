@@ -32,7 +32,6 @@ from app.api.users.sessions import router as sessions_router
 from app.api.users.profiles import router as profiles_router
 from app.api.users.privacy import router as privacy_router          # GET+extended PATCH /me/privacy
 from app.api.users.profile_update import router as profile_update_router  # PATCH /me/profile with username
-from app.api.users.search import router as user_search_router       # GET /users/search, POST /users/{username}/follow
 
 # ── Posts ─────────────────────────────────────────────────────────────────────
 from app.api.posts.posts import router as posts_router
@@ -42,15 +41,11 @@ from app.api.posts.manage import router as posts_manage_router      # DELETE /po
 # ── Media (Telegram-backed uploads) ───────────────────────────────────────────
 from app.api.media import router as media_router
 
-# ── Chat & DMs ────────────────────────────────────────────────────────────────
+# ── Public chat stream ────────────────────────────────────────────────────────
 from app.api.chat.stream import router as chat_router
-from app.api.dm.threads import router as dm_router
 
 # ── Public site bootstrap ─────────────────────────────────────────────────────
 from app.api.site import router as public_site_router
-
-# ── Client handshake (origin + signed token) ─────────────────────────────────
-from app.api.client import router as client_router
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
 from app.api.admin.tags import router as admin_tags_router
@@ -129,18 +124,13 @@ app.add_middleware(
     allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*", "X-Client-Token"],
+    allow_headers=["*"],
     expose_headers=["*"],
 )
 
 # Speed: compress JSON responses.
 from fastapi.middleware.gzip import GZipMiddleware
 app.add_middleware(GZipMiddleware, minimum_size=1024)
-
-# Security: only allowed origins with a fresh handshake token may call the API.
-# Registered after CORS so browser preflight requests still pass through.
-from app.core.client_guard import ClientGuardMiddleware
-app.add_middleware(ClientGuardMiddleware)
 
 
 @app.middleware("http")
@@ -180,7 +170,7 @@ app.include_router(sessions_router,       prefix="/api/v1/me", tags=["account"])
 app.include_router(profiles_router,       prefix="/api/v1",    tags=["profiles"])
 
 # ── Users ─────────────────────────────────────────────────────────────────────
-app.include_router(user_search_router, prefix="/api/v1", tags=["users"])
+
 
 # ── Posts ─────────────────────────────────────────────────────────────────────
 # posts_manage_router first so DELETE /posts/{id} and /posts/categories/counts are registered
@@ -189,16 +179,14 @@ app.include_router(posts_manage_router,  prefix="/api/v1",       tags=["posts"])
 app.include_router(posts_router,         prefix="/api/v1/posts",  tags=["posts"])
 app.include_router(interactions_router,  prefix="/api/v1/posts",  tags=["posts"])
 
-# ── Chat & DMs ────────────────────────────────────────────────────────────────
+# ── Chat ──────────────────────────────────────────────────────────────────────
 app.include_router(chat_router, prefix="/api/v1", tags=["chat"])
-app.include_router(dm_router,   prefix="/api/v1", tags=["dm"])
 
 # ── Media ─────────────────────────────────────────────────────────────────────
 app.include_router(media_router, prefix="/api/v1", tags=["media"])
 
 # ── Public site bootstrap ─────────────────────────────────────────────────────
 app.include_router(public_site_router, prefix="/api/v1", tags=["site"])
-app.include_router(client_router,      prefix="/api/v1/client", tags=["client"])
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
 app.include_router(admin_tags_router, prefix="/api/v1/admin", tags=["admin"])

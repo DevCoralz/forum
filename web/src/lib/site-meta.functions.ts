@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequestHeader, getRequestUrl } from "@tanstack/react-start/server";
+import { getRequestUrl, getRequestHeader } from "@tanstack/react-start/server";
 
 export interface SiteMeta {
   name: string | null;
@@ -10,29 +10,14 @@ export interface SiteMeta {
 }
 
 let cache: { at: number; origin: string; value: SiteMeta } | null = null;
-// Stretched from 30s: every SSR page render was hitting /handshake + /site on
+// Stretched from 30s: every SSR page render was hitting /site on
 // the origin server, and a single slow backend response (Termux under load)
 // aborted the fetch and showed up as an origin-side "context canceled" on the
 // proxy. Longer TTL means far fewer of these round trips in the first place.
 const TTL = 5 * 60_000;
 const STALE_OK = 30 * 60_000; // serve a stale cached value rather than refetch while one is already in flight
 
-// Handshake tokens are cheap to reuse across many SSR requests (they're only
-// origin-bound, not request-bound) — cache one per origin instead of doing a
-// fresh handshake on every single page render.
-const tokenCache = new Map<string, { token: string; expiresAt: number }>();
 let inFlight: Promise<SiteMeta | null> | null = null;
-
-async function fetchToken(api: string, origin: string, signal: AbortSignal): Promise<string | undefined> {
-  const cached = tokenCache.get(origin);
-  if (cached && Date.now() < cached.expiresAt) return cached.token;
-  const hs = await fetch(`${api}/api/v1/client/handshake`, { method: "POST", headers: { Origin: origin }, signal });
-  if (!hs.ok) return undefined;
-  const data = (await hs.json()) as { token?: string; expires_in?: number };
-  if (!data.token) return undefined;
-  tokenCache.set(origin, { token: data.token, expiresAt: Date.now() + Math.max(60, (data.expires_in ?? 600) - 30) * 1000 });
-  return data.token;
-}
 
 /**
  * Server-rendered site name/image so browsers and social crawlers (which never
@@ -66,9 +51,8 @@ export const getSiteMeta = createServerFn({ method: "GET" }).handler(async (): P
     // blocking the page render forever.
     const signal = AbortSignal.timeout(8000);
     try {
-      const token = await fetchToken(api, origin, signal);
       const res = await fetch(`${api}/api/v1/site`, {
-        headers: { Origin: origin, Accept: "application/json", ...(token ? { "X-Client-Token": token } : {}) },
+        headers: { Origin: origin, Accept: "application/json" },
         signal,
       });
       if (!res.ok) return cache?.value ?? null;

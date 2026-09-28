@@ -4,10 +4,10 @@ import { AuthForm } from "@/components/auth/auth-form";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Log in — I2P Forum" },
-      { name: "description", content: "Log in to I2P Forum." },
-      { property: "og:title", content: "Log in — I2P Forum" },
-      { property: "og:description", content: "Log in to I2P Forum." },
+      { title: "Log in — Coralz" },
+      { name: "description", content: "Log in to Coralz." },
+      { property: "og:title", content: "Log in — Coralz" },
+      { property: "og:description", content: "Log in to Coralz." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

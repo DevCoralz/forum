@@ -12,13 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as WriteRouteImport } from './routes/write'
 import { Route as CategoryCategoryIdRouteImport } from './routes/category.$categoryId'
 import { Route as PostPostIdRouteImport } from './routes/post.$postId'
-import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
 import { Route as ThreadThreadIdRouteImport } from './routes/thread.$threadId'
 import { Route as ToolToolIdRouteImport } from './routes/tool.$toolId'
 
@@ -35,11 +33,6 @@ const AdminRoute = AdminRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MessagesRoute = MessagesRouteImport.update({
-  id: '/messages',
-  path: '/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -67,11 +60,6 @@ const PostPostIdRoute = PostPostIdRouteImport.update({
   path: '/post/$postId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProfileUsernameRoute = ProfileUsernameRouteImport.update({
-  id: '/profile/$username',
-  path: '/profile/$username',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ThreadThreadIdRoute = ThreadThreadIdRouteImport.update({
   id: '/thread/$threadId',
   path: '/thread/$threadId',
@@ -87,13 +75,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
-  '/messages': typeof MessagesRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/write': typeof WriteRoute
   '/category/$categoryId': typeof CategoryCategoryIdRoute
   '/post/$postId': typeof PostPostIdRoute
-  '/profile/$username': typeof ProfileUsernameRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/tool/$toolId': typeof ToolToolIdRoute
 }
@@ -101,13 +87,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
-  '/messages': typeof MessagesRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/write': typeof WriteRoute
   '/category/$categoryId': typeof CategoryCategoryIdRoute
   '/post/$postId': typeof PostPostIdRoute
-  '/profile/$username': typeof ProfileUsernameRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/tool/$toolId': typeof ToolToolIdRoute
 }
@@ -116,13 +100,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
-  '/messages': typeof MessagesRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/write': typeof WriteRoute
   '/category/$categoryId': typeof CategoryCategoryIdRoute
   '/post/$postId': typeof PostPostIdRoute
-  '/profile/$username': typeof ProfileUsernameRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/tool/$toolId': typeof ToolToolIdRoute
 }
@@ -132,13 +114,11 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
-    | '/messages'
     | '/settings'
     | '/signup'
     | '/write'
     | '/category/$categoryId'
     | '/post/$postId'
-    | '/profile/$username'
     | '/thread/$threadId'
     | '/tool/$toolId'
   fileRoutesByTo: FileRoutesByTo
@@ -146,13 +126,11 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
-    | '/messages'
     | '/settings'
     | '/signup'
     | '/write'
     | '/category/$categoryId'
     | '/post/$postId'
-    | '/profile/$username'
     | '/thread/$threadId'
     | '/tool/$toolId'
   id:
@@ -160,13 +138,11 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
-    | '/messages'
     | '/settings'
     | '/signup'
     | '/write'
     | '/category/$categoryId'
     | '/post/$postId'
-    | '/profile/$username'
     | '/thread/$threadId'
     | '/tool/$toolId'
   fileRoutesById: FileRoutesById
@@ -175,13 +151,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   LoginRoute: typeof LoginRoute
-  MessagesRoute: typeof MessagesRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   WriteRoute: typeof WriteRoute
   CategoryCategoryIdRoute: typeof CategoryCategoryIdRoute
   PostPostIdRoute: typeof PostPostIdRoute
-  ProfileUsernameRoute: typeof ProfileUsernameRoute
   ThreadThreadIdRoute: typeof ThreadThreadIdRoute
   ToolToolIdRoute: typeof ToolToolIdRoute
 }
@@ -207,13 +181,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/messages': {
-      id: '/messages'
-      path: '/messages'
-      fullPath: '/messages'
-      preLoaderRoute: typeof MessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -251,13 +218,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostPostIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/profile/$username': {
-      id: '/profile/$username'
-      path: '/profile/$username'
-      fullPath: '/profile/$username'
-      preLoaderRoute: typeof ProfileUsernameRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/thread/$threadId': {
       id: '/thread/$threadId'
       path: '/thread/$threadId'
@@ -279,13 +239,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   LoginRoute: LoginRoute,
-  MessagesRoute: MessagesRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   WriteRoute: WriteRoute,
   CategoryCategoryIdRoute: CategoryCategoryIdRoute,
   PostPostIdRoute: PostPostIdRoute,
-  ProfileUsernameRoute: ProfileUsernameRoute,
   ThreadThreadIdRoute: ThreadThreadIdRoute,
   ToolToolIdRoute: ToolToolIdRoute,
 }

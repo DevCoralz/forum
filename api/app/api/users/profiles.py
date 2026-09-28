@@ -17,7 +17,12 @@ router = APIRouter()
 
 
 @router.get("/profiles/{username}", response_model=PublicProfile)
-def get_profile(username: str):
+def get_profile(username: str, user: CurrentUser = Depends(get_current_user)):
+    # Profiles are private: a member can only ever load their own account page.
+    if username != user.username:
+        from app.core.exceptions import not_found
+
+        raise not_found("Profile not found")
     return profile_service.get_public_profile(username)
 
 

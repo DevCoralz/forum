@@ -73,7 +73,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
   if (maintenance) {
     return (
       <div className="maintenance-screen">
-        <span className="brand-mark" aria-hidden="true">I2P</span>
+        <span className="brand-mark" aria-hidden="true">C</span>
         <h1>{siteName}</h1>
         <p>The site is in maintenance mode. Check back soon.</p>
       </div>

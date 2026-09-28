@@ -13,4 +13,4 @@ export const siteService = {
   },
 };
 
-export const DEFAULT_SITE_NAME = "I2P Forum";
+export const DEFAULT_SITE_NAME = "Coralz";

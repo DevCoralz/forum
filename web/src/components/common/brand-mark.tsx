@@ -2,10 +2,10 @@ import { assetUrl } from "@/services/api";
 
 interface BrandMarkProps {
   name?: string;
-  logoUrl?: string | null;
+  logoUrl?: string | null | undefined;
 }
 
-export function BrandMark({ name = "I2P Forum", logoUrl }: BrandMarkProps) {
+export function BrandMark({ name = "Coralz", logoUrl }: BrandMarkProps) {
   const [first, ...rest] = name.split(" ");
   const resolvedLogo = assetUrl(logoUrl ?? undefined);
 
@@ -23,7 +23,7 @@ export function BrandMark({ name = "I2P Forum", logoUrl }: BrandMarkProps) {
           }}
         />
       ) : (
-        <span className="brand-mark" aria-hidden="true">I2P</span>
+        <span className="brand-mark" aria-hidden="true">C</span>
       )}
       <span className="font-display text-[1.05rem] font-bold text-foreground">
         <span className="brand-red">{first}</span>

@@ -6,10 +6,10 @@ import { WritePostPage } from "@/components/posts/write-post-page";
 export const Route = createFileRoute("/write")({
   head: () => ({
     meta: [
-      { title: "Write a post — I2P Forum" },
-      { name: "description", content: "Write an I2P Forum post." },
-      { property: "og:title", content: "Write a post — I2P Forum" },
-      { property: "og:description", content: "Write an I2P Forum post." },
+      { title: "Share a tool — Coralz" },
+      { name: "description", content: "Share a tool on Coralz." },
+      { property: "og:title", content: "Share a tool — Coralz" },
+      { property: "og:description", content: "Share a tool on Coralz." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },

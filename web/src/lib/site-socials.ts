@@ -9,7 +9,7 @@ import type { ComponentType } from "react";
  * deprecated in lucide-react as of 0.5xx (still exported, flagged for
  * eventual removal) so they're deliberately left out here — Discord has no
  * dedicated lucide icon either, hence MessageCircle for it, matching the
- * same stand-in already used for Discord in profile-page.tsx.
+ * same stand-in already used for Discord.
  */
 export const SITE_SOCIAL_PLATFORMS: { key: string; label: string; icon: ComponentType<{ className?: string }> }[] = [
   { key: "discord", label: "Discord", icon: MessageCircle },

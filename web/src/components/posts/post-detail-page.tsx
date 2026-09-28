@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Crown, Heart, LockKeyhole, MessageCircle, Send, Eye } from "lucide-react";
+import { Crown, Heart, LockKeyhole, MessageCircle, Eye } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "sonner";
 import { FormattedText } from "@/lib/telegram-format";
@@ -63,27 +63,9 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
     onError: (error) => toast.error(error instanceof ApiError && error.status === 401 ? "Log in to like threads." : "Couldn't save your like. Try again."),
   });
 
-  const commentMutation = useMutation({
-    mutationFn: (body: string) => postsService.addComment(post.id, body),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["posts"] });
-      void hardRefresh();
-    },
-    onError: (error) => toast.error(error instanceof ApiError && error.status === 401 ? "Log in to comment." : "Couldn't post your comment. Try again."),
-  });
-
   const comments: PostComment[] = commentsQuery.data ?? [];
   const similar: PostSummary[] = similarQuery.data ?? [];
-  const [draft, setDraft] = useState("");
   const [expanded, setExpanded] = useState(false);
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const body = draft.trim();
-    if (!body) return;
-    setDraft("");
-    commentMutation.mutate(body);
-  }
 
   const likeCount = Number(post.likes) + (liked && !post.likedByViewer ? 1 : 0) - (!liked && post.likedByViewer ? 1 : 0);
 
@@ -115,10 +97,9 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
                 </>
               ) : post.lockReason === "interact" ? (
                 <>
-                  <p>Like and comment to unlock this thread.</p>
+                  <p>Like this thread to unlock it.</p>
                   <ul className="flex gap-4 text-xs text-muted-foreground">
                     <li className={liked ? "text-primary" : ""}><Heart className="mr-1 inline size-3.5" />{liked ? "Liked" : "Like it"}</li>
-                    <li className={post.commentedByViewer ? "text-primary" : ""}><MessageCircle className="mr-1 inline size-3.5" />{post.commentedByViewer ? "Commented" : "Leave a comment"}</li>
                   </ul>
                   <p className="text-xs text-muted-foreground">Upgrade Membership To Bypass</p>
                 </>
@@ -166,10 +147,6 @@ export function PostDetailPage({ post: initialPost }: { post: PostDetail }) {
             <li className="py-4 text-sm text-muted-foreground">No comment</li>
           )}
         </ul>
-        <form onSubmit={submit} className="comment-box">
-          <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={3} maxLength={2000} placeholder={user ? "Write a comment…" : "Log in to comment…"} aria-label="Write a comment" />
-          <div className="flex justify-end"><Button type="submit" size="sm" disabled={!draft.trim() || commentMutation.isPending}><Send /> Comment</Button></div>
-        </form>
       </section>
 
       <section className="mt-12">

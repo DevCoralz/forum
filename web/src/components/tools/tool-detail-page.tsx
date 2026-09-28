@@ -183,10 +183,7 @@ export function ToolDetailPage() {
       </section>
 
       <p className="muted-note">
-        Posted by{" "}
-        <Link to="/profile/$username" params={{ username: post.author.username }}>
-          @{post.author.username}
-        </Link>
+        Posted by @{post.author.username}
       </p>
     </div>
   );
