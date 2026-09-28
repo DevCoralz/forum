@@ -64,7 +64,11 @@ export function SiteHeader() {
               <a href="/" onClick={() => setMenuOpen(false)}>Home</a>
               <a href="/#categories" onClick={() => setMenuOpen(false)}>Categories</a>
               <a href="/#latest" onClick={() => setMenuOpen(false)}>Latest items</a>
-              {user && <Link to="/write" onClick={() => setMenuOpen(false)}>Share a tool</Link>}
+              {user && (
+                isStaff
+                  ? <Link to="/write" onClick={() => setMenuOpen(false)}>Share a tool</Link>
+                  : <Link to="/share" onClick={() => setMenuOpen(false)}>Share a tool</Link>
+              )}
               {user && <Link to="/settings" onClick={() => setMenuOpen(false)}>Settings</Link>}
               {isStaff && <Link to="/admin" onClick={() => setMenuOpen(false)} className="admin-menu-link">Admin</Link>}
               {user ? <button onClick={handleSignOut}>Log out</button> : <Link to="/signup" onClick={() => setMenuOpen(false)}>Register</Link>}

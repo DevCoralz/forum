@@ -1,6 +1,9 @@
 from typing import Optional
 
 from app.core.config import CAN_POST_ROLES, PREMIUM_ACCESS_ROLES
+
+# Admin-only posting: only admin/super_admin can create posts
+ADMIN_POST_ROLES: set[str] = {"admin", "super_admin"}
 from app.core.exceptions import bad_request, forbidden, not_found
 from app.api.media import media_url
 from app.core.database import get_db
@@ -123,24 +126,12 @@ def _has_file_access(post: dict, viewer_role: Optional[str], viewer_id: Optional
 
 class PostService:
     def create(self, author_id: str, author_role: str, body: CreatePostRequest) -> dict:
-        if author_role not in CAN_POST_ROLES:
-            raise forbidden("Upgrade Membership to create posts")
+        if author_role not in ADMIN_POST_ROLES:
+            raise forbidden("Only administrators can create posts")
         _ensure_not_suspended(author_id)
 
         if body.kind == "thread":
-            threads_id = _threads_category_id()
-            return post_repo.create(
-                author_id=author_id,
-                title=body.title,
-                content=body.content,
-                category_id=threads_id,
-                subcategory_id=None,
-                post_type=body.post_type,
-                tags=body.tags,
-                kind="thread",
-                attachment_media_id=body.attachment_media_id,
-                image_media_ids=body.image_media_ids,
-            )
+            raise bad_request("Threads are no longer supported")
 
         # ── Tool ─────────────────────────────────────────────────────────────
         if not body.category_id:
@@ -149,7 +140,7 @@ class PostService:
         if not category:
             raise not_found("Category not found")
         if category["slug"] == "threads":
-            raise bad_request("Tools cannot be posted in the Threads category")
+            raise bad_request("The Threads category has been removed")
         sub_ids = list(dict.fromkeys(body.subcategory_ids or []))
         if not sub_ids:
             raise bad_request("Choose at least one subcategory")
@@ -207,6 +198,9 @@ class PostService:
                      limit: int, offset: int, category_id: Optional[str] = None,
                      subcategory_id: Optional[str] = None,
                      kind: Optional[str] = None) -> list[PostSummary]:
+        # Only admins/super_admins can see posts
+        if viewer_role not in ("admin", "super_admin"):
+            return []
         if subcategory_id and not category_repo.find_subcategory(subcategory_id):
             raise not_found("Subcategory not found")
         if category_id and not category_repo.find(category_id):
@@ -245,6 +239,9 @@ class PostService:
 
     def get_detail(self, post_id: str, viewer_role: Optional[str], viewer_id: Optional[str]) -> PostDetail:
         _ensure_not_suspended(viewer_id)
+        # Only admins can view post details
+        if viewer_role not in ("admin", "super_admin"):
+            raise forbidden("Only administrators can view posts")
         post = post_repo.find(post_id)
         if not post:
             raise not_found("Post not found")

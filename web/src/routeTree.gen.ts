@@ -14,10 +14,10 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ShareRouteImport } from './routes/share'
 import { Route as WriteRouteImport } from './routes/write'
 import { Route as CategoryCategoryIdRouteImport } from './routes/category.$categoryId'
 import { Route as PostPostIdRouteImport } from './routes/post.$postId'
-import { Route as ThreadThreadIdRouteImport } from './routes/thread.$threadId'
 import { Route as ToolToolIdRouteImport } from './routes/tool.$toolId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -45,6 +45,11 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShareRoute = ShareRouteImport.update({
+  id: '/share',
+  path: '/share',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WriteRoute = WriteRouteImport.update({
   id: '/write',
   path: '/write',
@@ -60,11 +65,6 @@ const PostPostIdRoute = PostPostIdRouteImport.update({
   path: '/post/$postId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ThreadThreadIdRoute = ThreadThreadIdRouteImport.update({
-  id: '/thread/$threadId',
-  path: '/thread/$threadId',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ToolToolIdRoute = ToolToolIdRouteImport.update({
   id: '/tool/$toolId',
   path: '/tool/$toolId',
@@ -77,10 +77,10 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/share': typeof ShareRoute
   '/write': typeof WriteRoute
   '/category/$categoryId': typeof CategoryCategoryIdRoute
   '/post/$postId': typeof PostPostIdRoute
-  '/thread/$threadId': typeof ThreadThreadIdRoute
   '/tool/$toolId': typeof ToolToolIdRoute
 }
 export interface FileRoutesByTo {
@@ -89,10 +89,10 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/share': typeof ShareRoute
   '/write': typeof WriteRoute
   '/category/$categoryId': typeof CategoryCategoryIdRoute
   '/post/$postId': typeof PostPostIdRoute
-  '/thread/$threadId': typeof ThreadThreadIdRoute
   '/tool/$toolId': typeof ToolToolIdRoute
 }
 export interface FileRoutesById {
@@ -102,10 +102,10 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/share': typeof ShareRoute
   '/write': typeof WriteRoute
   '/category/$categoryId': typeof CategoryCategoryIdRoute
   '/post/$postId': typeof PostPostIdRoute
-  '/thread/$threadId': typeof ThreadThreadIdRoute
   '/tool/$toolId': typeof ToolToolIdRoute
 }
 export interface FileRouteTypes {
@@ -116,10 +116,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/settings'
     | '/signup'
+    | '/share'
     | '/write'
     | '/category/$categoryId'
     | '/post/$postId'
-    | '/thread/$threadId'
     | '/tool/$toolId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -128,10 +128,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/settings'
     | '/signup'
+    | '/share'
     | '/write'
     | '/category/$categoryId'
     | '/post/$postId'
-    | '/thread/$threadId'
     | '/tool/$toolId'
   id:
     | '__root__'
@@ -140,10 +140,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/settings'
     | '/signup'
+    | '/share'
     | '/write'
     | '/category/$categoryId'
     | '/post/$postId'
-    | '/thread/$threadId'
     | '/tool/$toolId'
   fileRoutesById: FileRoutesById
 }
@@ -153,10 +153,10 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
+  ShareRoute: typeof ShareRoute
   WriteRoute: typeof WriteRoute
   CategoryCategoryIdRoute: typeof CategoryCategoryIdRoute
   PostPostIdRoute: typeof PostPostIdRoute
-  ThreadThreadIdRoute: typeof ThreadThreadIdRoute
   ToolToolIdRoute: typeof ToolToolIdRoute
 }
 
@@ -197,6 +197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/share': {
+      id: '/share'
+      path: '/share'
+      fullPath: '/share'
+      preLoaderRoute: typeof ShareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/write': {
       id: '/write'
       path: '/write'
@@ -218,13 +225,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostPostIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/thread/$threadId': {
-      id: '/thread/$threadId'
-      path: '/thread/$threadId'
-      fullPath: '/thread/$threadId'
-      preLoaderRoute: typeof ThreadThreadIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/tool/$toolId': {
       id: '/tool/$toolId'
       path: '/tool/$toolId'
@@ -241,10 +241,10 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
+  ShareRoute: ShareRoute,
   WriteRoute: WriteRoute,
   CategoryCategoryIdRoute: CategoryCategoryIdRoute,
   PostPostIdRoute: PostPostIdRoute,
-  ThreadThreadIdRoute: ThreadThreadIdRoute,
   ToolToolIdRoute: ToolToolIdRoute,
 }
 export const routeTree = rootRouteImport

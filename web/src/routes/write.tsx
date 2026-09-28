@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { WritePostPage } from "@/components/posts/write-post-page";
+import { useAuth } from "@/hooks/use-auth";
+import { NotFoundPage } from "@/components/common/not-found-page";
 
 export const Route = createFileRoute("/write")({
   head: () => ({
@@ -19,6 +21,22 @@ export const Route = createFileRoute("/write")({
 });
 
 function WriteRoute() {
+  const { user, status } = useAuth();
+
+  if (status === "loading") return null;
+
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen overflow-x-hidden bg-background">
+        <SiteHeader />
+        <main><NotFoundPage /></main>
+        <SiteFooter />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-background">
       <SiteHeader />

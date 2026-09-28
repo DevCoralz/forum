@@ -1,11 +1,14 @@
 import { BrandMark } from "@/components/common/brand-mark";
 import { useSite } from "@/hooks/use-site";
 import { SITE_SOCIAL_PLATFORMS } from "@/lib/site-socials";
+import { WhatsAppIcon, TelegramIcon } from "@/lib/site-socials";
 
 export function SiteFooter() {
   const { siteName, settings } = useSite();
   const socials = settings.site_socials ?? {};
-  const socialEntries = SITE_SOCIAL_PLATFORMS.filter((p) => socials[p.key]?.trim());
+  const socialEntries = SITE_SOCIAL_PLATFORMS.filter(
+    (p) => (p.key === "whatsapp" || p.key === "telegram") && socials[p.key]?.trim()
+  );
   const footerText = settings.site_footer?.trim() || `© ${new Date().getFullYear()} ${siteName}`;
 
   return (

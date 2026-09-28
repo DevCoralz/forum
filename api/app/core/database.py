@@ -647,17 +647,8 @@ def init_db() -> None:
                         (new_id(), name, slug, desc, i),
                     )
 
-            # Threads category always exists; every thread lives there.
-            cur.execute("SELECT id FROM post_categories WHERE slug='threads'")
-            row = cur.fetchone()
-            if not row:
-                cur.execute(
-                    "INSERT INTO post_categories (id, name, slug, description, sort_order) VALUES (%s,'Threads','threads','All threads',-1)",
-                    (new_id(),),
-                )
-                cur.execute("SELECT id FROM post_categories WHERE slug='threads'")
-                row = cur.fetchone()
-            cur.execute("UPDATE posts SET category_id=%s, subcategory_id=NULL WHERE category_id<>%s", (row["id"], row["id"]))
+            # Threads category is permanently removed. Hide it if it still exists.
+            cur.execute("UPDATE post_categories SET is_hidden=TRUE WHERE slug='threads'")
 
             # Moderation + tag columns
             _add_column(cur, "users", "is_flagged", "is_flagged BOOLEAN NOT NULL DEFAULT FALSE")

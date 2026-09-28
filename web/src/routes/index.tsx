@@ -2,10 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
-  Users, Eye, Layers, Radio,
-  Send, MessageCircle, Globe, Github,
+  Users, Eye, Radio,
   ChevronRight, Zap, Plus, X,
-  Flame, Settings, Crown, Database, Cookie, FileText, Grid2X2,
+  Flame, Settings, Crown, Database, Cookie, FileText, Grid2X2, Layers,
 } from "lucide-react";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -13,9 +12,11 @@ import { postsService } from "@/services/posts";
 import { useSite } from "@/hooks/use-site";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/services/api";
+import { WhatsAppIcon, TelegramIcon } from "@/lib/site-socials";
+import { PostFeed } from "@/components/posts/post-feed";
 import type { Category } from "@/types/community";
 
-export const Route = createFileRoute("/")(({
+export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Home" },
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/")(({
     ],
   }),
   component: Index,
-}));
+});
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -33,7 +34,6 @@ function fmt(n: number): string {
   return n.toLocaleString();
 }
 
-// Icon map — matches the icon slugs stored on Category
 const CAT_ICONS: Record<string, typeof Layers> = {
   flame:    Flame,
   settings: Settings,
@@ -44,14 +44,12 @@ const CAT_ICONS: Record<string, typeof Layers> = {
   grid:     Grid2X2,
 };
 
-// Tone → gradient pairs for category cards
 const CARD_GRADIENTS: Record<string, string> = {
   rose:    "from-rose-500/20 to-pink-400/10 border-rose-300/40",
   crimson: "from-rose-600/20 to-red-400/10 border-red-300/40",
   cyan:    "from-cyan-500/20 to-sky-400/10 border-cyan-300/40",
   violet:  "from-violet-500/20 to-purple-400/10 border-violet-300/40",
   emerald: "from-emerald-500/20 to-teal-400/10 border-emerald-300/40",
-  // amber = premium/golden — stronger gold border for distinction
   amber:   "from-amber-400/25 to-yellow-300/15 border-amber-300/60",
   blue:    "from-blue-500/20 to-indigo-400/10 border-blue-300/40",
 };
@@ -62,50 +60,33 @@ const ICON_BG: Record<string, string> = {
   cyan:    "bg-cyan-100 text-cyan-600",
   violet:  "bg-violet-100 text-violet-600",
   emerald: "bg-emerald-100 text-emerald-600",
-  // amber = golden crown — warm gold icon bg
   amber:   "bg-amber-100 text-amber-500",
   blue:    "bg-blue-100 text-blue-600",
 };
 
-const SOCIAL_ICONS: Record<string, typeof Send> = {
-  discord:  MessageCircle,
-  telegram: Send,
-  whatsapp: MessageCircle,
-  twitter:  Globe,
-  github:   Github,
-  website:  Globe,
-};
-
-const SOCIAL_COLORS: Record<string, string> = {
-  discord:  "hover:bg-indigo-500",
-  telegram: "hover:bg-sky-500",
-  whatsapp: "hover:bg-emerald-500",
-  twitter:  "hover:bg-slate-700",
-  github:   "hover:bg-slate-800",
-  website:  "hover:bg-primary",
-};
-
 // ── sub-components ────────────────────────────────────────────────────────────
 
+/** Single stat pill — icon background stripped per design */
 function StatPill({
   icon: Icon,
   label,
   value,
-  accent,
+  valueClass = "hz-stat-value",
 }: {
   icon: typeof Users;
   label: string;
   value: string | number;
-  accent: string;
+  valueClass?: string;
 }) {
   return (
     <div className="hz-stat-pill">
-      <div className={`hz-stat-icon ${accent}`}>
-        <Icon className="size-4" />
+      {/* no background on the icon wrapper */}
+      <div className="hz-stat-icon-bare">
+        <Icon className="size-4 text-white/50" />
       </div>
       <div className="min-w-0">
         <p className="hz-stat-label">{label}</p>
-        <p className="hz-stat-value">{value}</p>
+        <p className={valueClass}>{value}</p>
       </div>
     </div>
   );
@@ -136,11 +117,15 @@ function CategoryCard({ cat, onClick }: { cat: Category; onClick: () => void }) 
   );
 }
 
+/** WhatsApp + Telegram FAB only — real brand icons */
 function SocialFAB({ socials }: { socials: Record<string, string> }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const entries = Object.entries(socials).filter(([, v]) => v.trim());
+  // Only keep WhatsApp and Telegram
+  const entries: [string, string][] = (["whatsapp", "telegram"] as const)
+    .map((k) => [k, socials[k] ?? ""] as [string, string])
+    .filter(([, v]) => v.trim());
 
   useEffect(() => {
     if (!open) return;
@@ -158,16 +143,18 @@ function SocialFAB({ socials }: { socials: Record<string, string> }) {
       {open && (
         <div className="hz-fab-tray">
           {entries.map(([key, url]) => {
-            const Icon = SOCIAL_ICONS[key] ?? Globe;
-            const hover = SOCIAL_COLORS[key] ?? "hover:bg-primary";
+            const Icon = key === "whatsapp" ? WhatsAppIcon : TelegramIcon;
+            const hoverCls = key === "whatsapp"
+              ? "hover:bg-emerald-500"
+              : "hover:bg-sky-500";
             return (
               <a
                 key={key}
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={key}
-                className={`hz-fab-item ${hover}`}
+                aria-label={key === "whatsapp" ? "WhatsApp" : "Telegram"}
+                className={`hz-fab-item ${hoverCls}`}
               >
                 <Icon className="size-5" />
               </a>
@@ -194,6 +181,8 @@ function Index() {
   const navigate = useNavigate();
   const socials: Record<string, string> = settings.site_socials ?? {};
 
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+
   const categoriesQ = useQuery({
     queryKey: ["categories"],
     queryFn: postsService.listCategories,
@@ -207,10 +196,20 @@ function Index() {
     refetchInterval: 30_000,
   });
 
-  const categories: Category[] = (categoriesQ.data ?? []).filter((c) => !c.isHidden);
+  // Filter out threads category for everyone; filter posts for non-admins (admins see all)
+  const categories: Category[] = (categoriesQ.data ?? [])
+    .filter((c) => !c.isHidden && c.slug !== "threads");
+
   const stats = statsQ.data;
 
   const [firstName, ...rest] = siteName.split(" ");
+
+  // Visitor value: "3 Online" format, green
+  const visitorsValue = stats
+    ? stats.live_visitors > 0
+      ? `${stats.live_visitors} Online`
+      : "Online"
+    : "—";
 
   return (
     <div className="hz-page">
@@ -242,8 +241,12 @@ function Index() {
 
           {/* CTAs */}
           <div className="hz-hero-actions">
-            {user ? (
+            {isAdmin ? (
               <Link to="/write" className="hz-pill-btn hz-pill-primary">
+                <Plus className="size-4" /> Share a tool
+              </Link>
+            ) : user ? (
+              <Link to="/share" className="hz-pill-btn hz-pill-primary">
                 <Plus className="size-4" /> Share a tool
               </Link>
             ) : (
@@ -256,31 +259,28 @@ function Index() {
             </a>
           </div>
 
-          {/* stat cards */}
+          {/* stat cards — redesigned per spec */}
           <div className="hz-stats-row">
+            {/* Total Users — white value */}
             <StatPill
               icon={Users}
               label="Total Users"
               value={stats ? fmt(stats.total_users) : "—"}
-              accent="bg-indigo-50 text-indigo-500"
+              valueClass="hz-stat-value hz-stat-white"
             />
+            {/* Resources — purple value */}
             <StatPill
               icon={Eye}
               label="Resources"
               value={stats ? `${fmt(stats.total_posts)}+` : "—"}
-              accent="bg-emerald-50 text-emerald-500"
+              valueClass="hz-stat-value hz-stat-purple"
             />
+            {/* Site Visitors — green value, "X Online" format */}
             <StatPill
               icon={Radio}
               label="Site Visitors"
-              value={
-                stats
-                  ? stats.live_visitors > 0
-                    ? `${stats.live_visitors} Online`
-                    : "Online"
-                  : "—"
-              }
-              accent="bg-cyan-50 text-cyan-500"
+              value={visitorsValue}
+              valueClass="hz-stat-value hz-stat-green"
             />
           </div>
         </div>
@@ -317,6 +317,14 @@ function Index() {
             </div>
           )}
         </section>
+
+        {/* ── Posts feed — admin-only visibility ──────────────────────── */}
+        {isAdmin && (
+          <section id="latest" className="hz-section">
+            <h2 className="hz-section-title">Latest Posts</h2>
+            <PostFeed />
+          </section>
+        )}
       </main>
 
       <SiteFooter />
@@ -326,3 +334,4 @@ function Index() {
     </div>
   );
 }
+
