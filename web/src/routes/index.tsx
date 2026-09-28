@@ -189,6 +189,14 @@ function Index() {
     staleTime: 60_000,
   });
 
+  // Only fetched for admins: the feed section below is admin-only.
+  const latestQ = useQuery({
+    queryKey: ["posts", "latest"],
+    queryFn: () => postsService.listLatest(),
+    enabled: isAdmin,
+    staleTime: 30_000,
+  });
+
   const statsQ = useQuery({
     queryKey: ["site-stats"],
     queryFn: () => apiRequest<{ total_users: number; total_posts: number; live_visitors: number }>("/site/stats"),
@@ -320,10 +328,8 @@ function Index() {
 
         {/* ── Posts feed — admin-only visibility ──────────────────────── */}
         {isAdmin && (
-          <section id="latest" className="hz-section">
-            <h2 className="hz-section-title">Latest Posts</h2>
-            <PostFeed />
-          </section>
+          // PostFeed renders its own <section id="latest"> + heading.
+          <PostFeed posts={latestQ.data ?? []} isLoading={latestQ.isLoading} />
         )}
       </main>
 

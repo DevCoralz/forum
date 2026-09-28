@@ -63,7 +63,7 @@ export function PostRow({ post }: { post: PostSummary }) {
   );
 }
 
-export function PostFeed({ posts, isLoading = false }: { posts: PostSummary[]; isLoading?: boolean }) {
+export function PostFeed({ posts = [], isLoading = false }: { posts?: PostSummary[]; isLoading?: boolean }) {
   const [filter, setFilter] = useState<FeedFilter>("all");
   const hasPremium = useHasPremiumAccess();
   const visible = filter === "all" ? posts : posts.filter((post) => post.access === filter);
