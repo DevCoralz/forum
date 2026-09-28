@@ -1,5 +1,6 @@
 import atexit
 import queue
+import time
 import uuid
 from contextlib import contextmanager
 
@@ -10,11 +11,30 @@ from app.core.config import DB_HOST, DB_NAME, DB_PASS, DB_PORT, DB_USER
 
 # Connection pool: reusing open MySQL connections removes the per-request
 # connect handshake and makes the API respond noticeably faster.
+# Entries are (connection, monotonic time it was returned to the pool).
 _POOL_SIZE = 10
-_pool: queue.Queue[pymysql.connections.Connection] = queue.Queue(maxsize=_POOL_SIZE)
+_pool: queue.Queue[tuple[pymysql.connections.Connection, float]] = queue.Queue(maxsize=_POOL_SIZE)
+
+# Every socket operation is bounded. pymysql's default read_timeout is None
+# (wait forever): when the MySQL host silently drops an idle pooled connection
+# (NAT / firewall / server-side wait_timeout with no RST), the next ping or
+# query on it blocks indefinitely and takes its request — and, if it runs on
+# the event loop, the whole server — down with it. Bounded timeouts turn that
+# into a fast, recoverable error.
+_CONNECT_TIMEOUT = 5
+_READ_TIMEOUT = 15
+_WRITE_TIMEOUT = 15
+
+# Connections idle longer than this are discarded instead of reused: hosts
+# commonly kill idle MySQL sessions after a few minutes, and a stale socket is
+# far cheaper to replace than to discover dead mid-request.
+_MAX_IDLE_SECONDS = 120.0
 
 
 def _connect(**kwargs):
+    kwargs.setdefault("connect_timeout", _CONNECT_TIMEOUT)
+    kwargs.setdefault("read_timeout", _READ_TIMEOUT)
+    kwargs.setdefault("write_timeout", _WRITE_TIMEOUT)
     return pymysql.connect(
         host=DB_HOST,
         port=DB_PORT,
@@ -32,28 +52,41 @@ def _conn(**kwargs):
     return _connect(**kwargs)
 
 
-def _checkout() -> pymysql.connections.Connection:
+def _discard(conn: pymysql.connections.Connection) -> None:
     try:
-        conn = _pool.get_nowait()
-        conn.ping(reconnect=True)  # drops dead connections, transparently reopens
-        return conn
-    except queue.Empty:
-        return _connect()
+        conn.close()
     except Exception:
-        return _connect()
+        pass
+
+
+def _checkout() -> pymysql.connections.Connection:
+    # Reuse a pooled connection only if it was used recently; a long-idle one is
+    # probably dead and is replaced without paying for a ping on a dead socket.
+    while True:
+        try:
+            conn, released_at = _pool.get_nowait()
+        except queue.Empty:
+            return _connect()
+        if not conn.open or time.monotonic() - released_at > _MAX_IDLE_SECONDS:
+            _discard(conn)
+            continue
+        try:
+            # Bounded by read_timeout, so a half-dead socket fails instead of hanging.
+            conn.ping(reconnect=False)
+            return conn
+        except Exception:
+            _discard(conn)
+            continue
 
 
 def _release(conn: pymysql.connections.Connection) -> None:
     try:
         if conn.open:
-            _pool.put_nowait(conn)
+            _pool.put_nowait((conn, time.monotonic()))
             return
     except Exception:
         pass
-    try:
-        conn.close()
-    except Exception:
-        pass
+    _discard(conn)
 
 
 @contextmanager
@@ -86,13 +119,10 @@ def get_db():
 def _close_pool() -> None:
     while True:
         try:
-            conn = _pool.get_nowait()
+            conn, _ = _pool.get_nowait()
         except queue.Empty:
             return
-        try:
-            conn.close()
-        except Exception:
-            pass
+        _discard(conn)
 
 
 def new_id() -> str:

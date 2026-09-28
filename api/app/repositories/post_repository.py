@@ -107,6 +107,23 @@ class CategoryRepository:
                 cur.execute("DELETE FROM post_categories WHERE id=%s", (category_id,))
                 return "ok"
 
+    def list_with_counts(self, include_hidden: bool = True) -> list[dict]:
+        """Categories plus their active-post count in ONE query. The public
+        /categories endpoint used to call post_count() once per category — a
+        separate pooled connection, ping and round trip each, all sequential."""
+        clause = "" if include_hidden else "WHERE NOT c.is_hidden"
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"""SELECT c.*, COUNT(p.id) AS post_count
+                        FROM post_categories c
+                        LEFT JOIN posts p ON p.category_id = c.id AND p.status='active'
+                        {clause}
+                        GROUP BY c.id
+                        ORDER BY c.sort_order, c.name"""
+                )
+                return list(cur.fetchall())
+
     def post_count(self, category_id: str) -> int:
         with get_db() as conn:
             with conn.cursor() as cur:

@@ -30,15 +30,31 @@ class SettingsRepository:
 
     def get_all(self) -> dict[str, str]:
         now = time.monotonic()
-        if self._cache is not None and now - self._cache_at < self.CACHE_TTL:
-            return self._cache
-        with self._cache_lock:
+        cached = self._cache
+        if cached is not None and now - self._cache_at < self.CACHE_TTL:
+            return cached
+        # Cache expired. Only ONE caller refreshes; everyone else keeps serving
+        # the previous value instead of queueing behind a network round trip
+        # (the lock used to be held across the MySQL read, so a slow database
+        # made every concurrent request wait on it).
+        if not self._cache_lock.acquire(blocking=cached is None):
+            return cached  # type: ignore[return-value]  # non-blocking only when cached is set
+        try:
             if self._cache is not None and time.monotonic() - self._cache_at < self.CACHE_TTL:
                 return self._cache
-            data = self._read_all()
+            try:
+                data = self._read_all()
+            except Exception:
+                # Database unreachable: a stale value beats a failed request.
+                if self._cache is not None:
+                    self._cache_at = time.monotonic() - self.CACHE_TTL + 5.0  # retry in ~5s
+                    return self._cache
+                raise
             self._cache = data
             self._cache_at = time.monotonic()
             return data
+        finally:
+            self._cache_lock.release()
 
     def invalidate(self) -> None:
         self._cache = None

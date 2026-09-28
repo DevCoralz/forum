@@ -3,6 +3,7 @@ import re
 import tempfile
 
 from fastapi import APIRouter, Depends, File, Request, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 
 from app.core import telegram
@@ -55,6 +56,26 @@ def media_url(media_id: str | None) -> str | None:
     return f"/api/v1/media/{media_id}"
 
 
+# Blocking MySQL access lives in plain functions so async handlers can hand it
+# to the threadpool. Calling get_db() straight from an `async def` runs the
+# query ON the event loop: one slow database socket then stalls every request.
+def _fetch_media_row(media_id: str):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM media WHERE id=%s", (media_id,))
+            return cur.fetchone()
+
+
+def _insert_media_row(mid, chat_id, msg_id, name, mime, size, kind, uploader_id) -> None:
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO media (id,tg_chat_id,tg_message_id,filename,mime_type,size_bytes,kind,uploaded_by) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
+                (mid, chat_id, msg_id, name, mime, size, kind, uploader_id),
+            )
+
+
 async def store_upload(file: UploadFile, uploader_id: str, allow_video: bool = True) -> dict:
     if not telegram.is_configured():
         raise bad_request("Media storage is not configured")
@@ -98,13 +119,9 @@ async def store_upload(file: UploadFile, uploader_id: str, allow_video: bool = T
         except OSError:
             pass
     mid = new_id()
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO media (id,tg_chat_id,tg_message_id,filename,mime_type,size_bytes,kind,uploaded_by) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
-                (mid, chat_id, msg_id, name, mime, size, kind, uploader_id),
-            )
+    await run_in_threadpool(
+        _insert_media_row, mid, chat_id, msg_id, name, mime, size, kind, uploader_id
+    )
     return {"id": mid, "url": media_url(mid), "kind": kind, "mime_type": mime, "size": size}
 
 
@@ -119,10 +136,7 @@ async def upload_media(file: UploadFile = File(...), user: CurrentUser = Depends
 async def get_media(media_id: str, request: Request):
     if not re.fullmatch(r"[0-9a-f-]{36}", media_id):
         raise not_found()
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM media WHERE id=%s", (media_id,))
-            m = cur.fetchone()
+    m = await run_in_threadpool(_fetch_media_row, media_id)
     if not m:
         raise not_found()
     size = int(m["size_bytes"])

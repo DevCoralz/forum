@@ -136,11 +136,17 @@ app.add_middleware(GZipMiddleware, minimum_size=1024)
 @app.middleware("http")
 async def maintenance_gate(request, call_next):
     """Site mode = maintenance: everything 503s except admin surface, login and the
-    public bootstrap so the maintenance page can still render."""
+    public bootstrap so the maintenance page can still render.
+
+    The settings lookup is a blocking MySQL call. It MUST NOT run on the event
+    loop: while it waits on the database the loop cannot serve anything else —
+    not other requests, not the tunnel's keep-alives — so one slow or dead DB
+    socket froze the whole API and surfaced as "context canceled" on every
+    in-flight request. It runs in the threadpool instead, and any failure fails
+    OPEN (the request proceeds) so a database hiccup can never take the site
+    down by itself."""
     path = request.url.path
     if path.startswith("/api/v1/"):
-        from app.repositories.settings_repository import settings_repo
-
         allowed = (
             path.startswith("/api/v1/admin")
             or path.startswith("/api/v1/auth/login")
@@ -148,7 +154,7 @@ async def maintenance_gate(request, call_next):
             or path.startswith("/api/v1/media/")
             or path.startswith("/api/docs")
         )
-        if not allowed and settings_repo.get_all().get("site_mode") == "maintenance":
+        if not allowed and await _in_maintenance():
             from fastapi.responses import JSONResponse
 
             return JSONResponse(
@@ -156,6 +162,18 @@ async def maintenance_gate(request, call_next):
                 status_code=503,
             )
     return await call_next(request)
+
+
+async def _in_maintenance() -> bool:
+    from fastapi.concurrency import run_in_threadpool
+
+    from app.repositories.settings_repository import settings_repo
+
+    try:
+        settings = await run_in_threadpool(settings_repo.get_all)
+    except Exception:
+        return False
+    return settings.get("site_mode") == "maintenance"
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 app.include_router(register_router,  prefix="/api/v1/auth", tags=["auth"])

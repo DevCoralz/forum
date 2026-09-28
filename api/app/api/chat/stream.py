@@ -9,6 +9,7 @@ from typing import Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
@@ -150,6 +151,33 @@ def join_stream(user: CurrentUser = Depends(get_current_user)):
     return ChatJoinOut(joined=True, member_count=count)
 
 
+def _store_message(user_id: str, payload: str, image_data: Optional[bytes], image_ext: str):
+    image_url: Optional[str] = None
+    if image_data is not None:
+        os.makedirs(CHAT_UPLOAD_DIR, exist_ok=True)
+        name = f"{secrets.token_hex(12)}{image_ext}"
+        with open(os.path.join(CHAT_UPLOAD_DIR, name), "wb") as fh:
+            fh.write(image_data)
+        image_url = f"/api/v1/chat/stream/images/{name}"
+
+    msg_id = str(uuid4())
+    now = _utcnow()
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO chat_messages (id, user_id, text, image_url, created_at) VALUES (%s,%s,%s,%s,%s)",
+                (msg_id, user_id, payload or None, image_url, now),
+            )
+            cur.execute(
+                """SELECT m.id AS msg_id, m.user_id, m.text, m.image_url, m.created_at,
+                          u.username, u.avatar_url, u.is_verified_tick, u.role
+                   FROM chat_messages m JOIN users u ON u.id = m.user_id
+                   WHERE m.id=%s""",
+                (msg_id,),
+            )
+            return cur.fetchone()
+
+
 @router.post("/chat/stream/messages", response_model=ChatMessageOut)
 async def send_message(
     text: Optional[str] = Form(default=None),
@@ -160,34 +188,16 @@ async def send_message(
     if not payload and image is None:
         raise HTTPException(422, "Message needs text or an image")
 
-    image_url: Optional[str] = None
+    image_data: Optional[bytes] = None
+    image_ext = ".png"
     if image is not None:
-        data = await image.read()
-        if len(data) > MAX_IMAGE_BYTES:
+        image_data = await image.read()
+        if len(image_data) > MAX_IMAGE_BYTES:
             raise HTTPException(413, "Image exceeds 5 MB")
-        ext = os.path.splitext(image.filename or "")[1].lower() or ".png"
-        os.makedirs(CHAT_UPLOAD_DIR, exist_ok=True)
-        name = f"{secrets.token_hex(12)}{ext}"
-        with open(os.path.join(CHAT_UPLOAD_DIR, name), "wb") as fh:
-            fh.write(data)
-        image_url = f"/api/v1/chat/stream/images/{name}"
+        image_ext = os.path.splitext(image.filename or "")[1].lower() or ".png"
 
-    msg_id = str(uuid4())
-    now = _utcnow()
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO chat_messages (id, user_id, text, image_url, created_at) VALUES (%s,%s,%s,%s,%s)",
-                (msg_id, user.id, payload or None, image_url, now),
-            )
-            cur.execute(
-                """SELECT m.id AS msg_id, m.user_id, m.text, m.image_url, m.created_at,
-                          u.username, u.avatar_url, u.is_verified_tick, u.role
-                   FROM chat_messages m JOIN users u ON u.id = m.user_id
-                   WHERE m.id=%s""",
-                (msg_id,),
-            )
-            row = cur.fetchone()
+    # Disk write + MySQL are blocking; never run them on the event loop.
+    row = await run_in_threadpool(_store_message, user.id, payload, image_data, image_ext)
     return _message_out(row)
 
 

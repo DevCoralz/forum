@@ -24,9 +24,9 @@ def list_categories():
             id=c["id"], name=c["name"], slug=c["slug"], description=c.get("description"),
             icon=c.get("icon"), icon_media_id=c.get("icon_media_id"),
             icon_url=media_url(c.get("icon_media_id") or None),
-            is_hidden=bool(c.get("is_hidden")), post_count=category_repo.post_count(c["id"]),
+            is_hidden=bool(c.get("is_hidden")), post_count=int(c.get("post_count") or 0),
         )
-        for c in category_repo.list_all(include_hidden=False)
+        for c in category_repo.list_with_counts(include_hidden=False)
     ]
 
 
