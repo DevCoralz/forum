@@ -654,13 +654,21 @@ h1 { color: var(--red-heading); }
 }
 .hz-pill-ghost:hover { background: rgba(255,255,255,0.16); }
 
-/* stat row */
+/* stat row — 2+1 on narrow screens, 3-col at 480px+ */
 .hz-stats-row {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: .75rem;
+  grid-template-columns: 1fr 1fr;
+  gap: .65rem;
+}
+/* third pill sits full-width below the pair on small screens */
+.hz-stats-row .hz-stat-pill:last-child {
+  grid-column: 1 / -1;
+}
+@media (min-width: 480px) {
+  .hz-stats-row { grid-template-columns: repeat(3, 1fr); gap: .75rem; }
+  .hz-stats-row .hz-stat-pill:last-child { grid-column: auto; }
 }
 
 .hz-stat-pill {
@@ -744,6 +752,14 @@ h1 { color: var(--red-heading); }
   box-shadow: 0 12px 28px rgba(15,23,42,0.12);
 }
 .hz-cat-card:active { transform: scale(.97); }
+
+/* amber/premium cards get a subtle golden ring */
+.hz-cat-card.hz-cat-amber {
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.35), 0 4px 18px rgba(251, 191, 36, 0.12);
+}
+.hz-cat-card.hz-cat-amber:hover {
+  box-shadow: 0 0 0 1.5px rgba(251, 191, 36, 0.55), 0 8px 24px rgba(251, 191, 36, 0.18);
+}
 
 .hz-cat-icon {
   display: grid;
@@ -838,7 +854,4 @@ h1 { color: var(--red-heading); }
 
 /* ── Responsive tweaks ────────────────────────────────────────────────────── */
 
-@media (max-width: 359px) {
-  .hz-stats-row { grid-template-columns: 1fr 1fr; }
-  .hz-stats-row .hz-stat-pill:last-child { grid-column: 1 / -1; }
-}
+/* hz-stats-row responsive handled in the stat row block above */

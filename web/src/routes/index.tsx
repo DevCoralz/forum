@@ -5,6 +5,7 @@ import {
   Users, Eye, Layers, Radio,
   Send, MessageCircle, Globe, Github,
   ChevronRight, Zap, Plus, X,
+  Flame, Settings, Crown, Database, Cookie, FileText, Grid2X2,
 } from "lucide-react";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -32,6 +33,17 @@ function fmt(n: number): string {
   return n.toLocaleString();
 }
 
+// Icon map — matches the icon slugs stored on Category
+const CAT_ICONS: Record<string, typeof Layers> = {
+  flame:    Flame,
+  settings: Settings,
+  crown:    Crown,
+  database: Database,
+  cookie:   Cookie,
+  file:     FileText,
+  grid:     Grid2X2,
+};
+
 // Tone → gradient pairs for category cards
 const CARD_GRADIENTS: Record<string, string> = {
   rose:    "from-rose-500/20 to-pink-400/10 border-rose-300/40",
@@ -39,7 +51,8 @@ const CARD_GRADIENTS: Record<string, string> = {
   cyan:    "from-cyan-500/20 to-sky-400/10 border-cyan-300/40",
   violet:  "from-violet-500/20 to-purple-400/10 border-violet-300/40",
   emerald: "from-emerald-500/20 to-teal-400/10 border-emerald-300/40",
-  amber:   "from-amber-500/20 to-yellow-400/10 border-amber-300/40",
+  // amber = premium/golden — stronger gold border for distinction
+  amber:   "from-amber-400/25 to-yellow-300/15 border-amber-300/60",
   blue:    "from-blue-500/20 to-indigo-400/10 border-blue-300/40",
 };
 
@@ -49,7 +62,8 @@ const ICON_BG: Record<string, string> = {
   cyan:    "bg-cyan-100 text-cyan-600",
   violet:  "bg-violet-100 text-violet-600",
   emerald: "bg-emerald-100 text-emerald-600",
-  amber:   "bg-amber-100 text-amber-600",
+  // amber = golden crown — warm gold icon bg
+  amber:   "bg-amber-100 text-amber-500",
   blue:    "bg-blue-100 text-blue-600",
 };
 
@@ -100,16 +114,17 @@ function StatPill({
 function CategoryCard({ cat, onClick }: { cat: Category; onClick: () => void }) {
   const gradient = CARD_GRADIENTS[cat.tone] ?? CARD_GRADIENTS.blue;
   const iconBg   = ICON_BG[cat.tone]      ?? ICON_BG.blue;
+  const IconComp = CAT_ICONS[cat.icon]    ?? Layers;
   return (
     <button
       onClick={onClick}
-      className={`hz-cat-card bg-gradient-to-br ${gradient}`}
+      className={`hz-cat-card bg-gradient-to-br ${gradient}${cat.tone === "amber" ? " hz-cat-amber" : ""}`}
     >
       <div className={`hz-cat-icon ${iconBg}`}>
         {cat.iconUrl ? (
           <img src={cat.iconUrl} alt="" className="size-5 object-contain" />
         ) : (
-          <Layers className="size-5" />
+          <IconComp className="size-5" />
         )}
       </div>
       <div className="flex-1 min-w-0 text-left">
