@@ -4,7 +4,6 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.api.media import media_url
-from app.core.database import get_db
 from app.repositories.settings_repository import settings_repo
 
 router = APIRouter()
@@ -46,29 +45,3 @@ def public_site():
             "url": ad["url"],
         })
     return {"settings": settings, "ads": ads}
-
-
-@router.get("/site/stats")
-def public_stats():
-    """Total users, post count, and live visitor count (last 3 min in chat_members)."""
-    from datetime import datetime, timedelta
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT COUNT(*) AS n FROM users WHERE is_banned = 0")
-            total_users = int((cur.fetchone() or {}).get("n", 0))
-
-            cur.execute("SELECT COUNT(*) AS n FROM posts WHERE status='active'")
-            total_posts = int((cur.fetchone() or {}).get("n", 0))
-
-            cutoff = datetime.utcnow() - timedelta(minutes=3)
-            cur.execute(
-                "SELECT COUNT(*) AS n FROM chat_members WHERE last_seen_at >= %s",
-                (cutoff,),
-            )
-            live_visitors = int((cur.fetchone() or {}).get("n", 0))
-
-    return {
-        "total_users": total_users,
-        "total_posts": total_posts,
-        "live_visitors": live_visitors,
-    }
