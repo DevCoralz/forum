@@ -12,7 +12,7 @@ import { postsService } from "@/services/posts";
 import { useSite } from "@/hooks/use-site";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/services/api";
-import { WhatsAppIcon, TelegramIcon } from "@/lib/site-socials";
+import { WhatsAppIcon, TelegramIcon } from "@/components/icons/social-icons";
 import { PostFeed } from "@/components/posts/post-feed";
 import type { Category } from "@/types/community";
 

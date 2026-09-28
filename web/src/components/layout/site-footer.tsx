@@ -1,7 +1,7 @@
 import { BrandMark } from "@/components/common/brand-mark";
 import { useSite } from "@/hooks/use-site";
 import { SITE_SOCIAL_PLATFORMS } from "@/lib/site-socials";
-import { WhatsAppIcon, TelegramIcon } from "@/lib/site-socials";
+import { WhatsAppIcon, TelegramIcon } from "@/components/icons/social-icons";
 
 export function SiteFooter() {
   const { siteName, settings } = useSite();
